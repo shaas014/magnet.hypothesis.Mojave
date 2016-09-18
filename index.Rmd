@@ -1,0 +1,25 @@
+---
+title: ""
+author: "cjlortie and ally ruttan"
+date: "September 17, 2016"
+output:
+  html_document:
+    theme: yeti
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+![](./MNP.jpg)
+
+### Magnet hypothesis: plant-pollinator interactions
+A test of the magnet hypothesis was examined in Mojave National Preserve by Ally Ruttan.
+
+![](./map.jpg)
+
+###Field season: 2015
