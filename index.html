@@ -239,6 +239,109 @@ div.tocify {
 </div>
 <div id="data-wrangling" class="section level3">
 <h3>Data wrangling</h3>
+<pre class="r"><code>#libraries
+library(tidyverse)
+library(knitr)
+
+#meta-data
+meta &lt;- read_csv(&quot;data/meta-data.csv&quot;)
+kable(meta)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">attribute</th>
+<th align="left">description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Recorder</td>
+<td align="left">Person who watched videos and gathered data</td>
+</tr>
+<tr class="even">
+<td align="left">Video ID</td>
+<td align="left">Name of actual video clip/file, or in-situ period</td>
+</tr>
+<tr class="odd">
+<td align="left">Day</td>
+<td align="left">Day of experiment that video was taken (corresponds to date)</td>
+</tr>
+<tr class="even">
+<td align="left">Date</td>
+<td align="left">Date video was taken</td>
+</tr>
+<tr class="odd">
+<td align="left">Treatment</td>
+<td align="left">SA (Larrea shrub flowers with annuals present), SAA (Annuals under flowering Larrea shrub), SX(Larrea shrub flowers with no annuals present under shrub), OA(open area with annuals but no shrub), AMB (annuals under non-flowering ambrosia shrub)</td>
+</tr>
+<tr class="even">
+<td align="left">Replicate</td>
+<td align="left">4 replicates per treatment per day</td>
+</tr>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">Combination of Day, treatment, and replicate; A unique name for each plot used for data collection</td>
+</tr>
+<tr class="even">
+<td align="left">plant species</td>
+<td align="left">D (Desert Dandelion, Malacorthrix glabrata), L (Creosote shrub, Larrea tridentata)</td>
+</tr>
+<tr class="odd">
+<td align="left">RTU</td>
+<td align="left">small fly SF, big fly BF, small bee SB, medium bee MB, big bee BB, beetle B, Lepidoptera L, Hemiptera H, Wasp W, Ant A, Bird BI, Odonota O, Spider S etc)</td>
+</tr>
+<tr class="even">
+<td align="left">total video duration</td>
+<td align="left">The full duration of the video, or in-situ observation period</td>
+</tr>
+<tr class="odd">
+<td align="left"># flw in FOV</td>
+<td align="left">the number of open flowers in the field of view of the camera</td>
+</tr>
+<tr class="even">
+<td align="left">start time (mins)</td>
+<td align="left">the time an insect/pollinator lands on a flower</td>
+</tr>
+<tr class="odd">
+<td align="left">stop time (mins)</td>
+<td align="left">the time the pollinator leaves the flower</td>
+</tr>
+<tr class="even">
+<td align="left">total visitation time</td>
+<td align="left">total time pollinator spends on a flower. If it visited multiple flowers, then the sum of all time spent on flowers.</td>
+</tr>
+<tr class="odd">
+<td align="left">number of flowers visited</td>
+<td align="left">the number of flowers visited by each individual pollinator</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>#data
+data &lt;- read_csv(&quot;data/MNP.2015.csv&quot;)
+data</code></pre>
+<pre><code>## # A tibble: 1,335 × 16
+##    recorder      ID   day     date treatment   rep  name plant insect.RTU
+##       &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;     &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;      &lt;chr&gt;
+## 1      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         SB
+## 2      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MB
+## 3      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MB
+## 4      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         SF
+## 5      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         BF
+## 6      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MF
+## 7      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         SB
+## 8      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         SB
+## 9      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MB
+## 10     Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MB
+## # ... with 1,325 more rows, and 7 more variables: total.duration &lt;time&gt;,
+## #   floral.density &lt;int&gt;, start &lt;chr&gt;, stop &lt;chr&gt;,
+## #   visitation.duration &lt;time&gt;, flowers.visited &lt;int&gt;, X16 &lt;chr&gt;</code></pre>
+<pre class="r"><code>#tidy data to expand treatment column (current structure is a mix of two factors)
+
+#visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
+
+#frequency counts in a separate dataframe (weighted by duration of recording)
+
+#total visitation.duration per experimental day</code></pre>
 </div>
 <div id="data-visualization" class="section level3">
 <h3>Data visualization</h3>

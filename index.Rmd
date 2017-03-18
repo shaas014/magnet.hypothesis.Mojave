@@ -36,7 +36,23 @@ An interesting corollary is that there are appropriate floral resources for dese
 ```{r library and data loads, warning=FALSE, message=FALSE}
 #libraries
 library(tidyverse)
+library(knitr)
 
+#meta-data
+meta <- read_csv("data/meta-data.csv")
+kable(meta)
+
+#data
+data <- read_csv("data/MNP.2015.csv")
+data
+
+#tidy data to expand treatment column (current structure is a mix of two factors)
+
+#visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
+
+#frequency counts in a separate dataframe (weighted by duration of recording)
+
+#total visitation.duration per experimental day
 
 
 ```
