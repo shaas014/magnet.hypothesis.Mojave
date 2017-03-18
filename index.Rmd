@@ -1,7 +1,7 @@
 ---
 title: ""
 author: "cjlortie and ally ruttan"
-date: "September 17, 2016"
+date: "March 2017"
 output:
   html_document:
     theme: yeti
@@ -18,8 +18,47 @@ knitr::opts_chunk$set(echo = TRUE)
 ![](./MNP.jpg)
 
 ### Magnet hypothesis: plant-pollinator interactions
-A test of the magnet hypothesis was examined in Mojave National Preserve by Ally Ruttan.
+**Purpose:** A test of the magnet hypothesis was examined in Mojave National Preserve by Ally Ruttan.    
+
+**Hypothesis:** Floral resource island created by shrubs and the associated beneficiary annual plants will positively and non-additively influence pollinator visitation rates. 
+
+**Predictions:**  
+(1) The frequency of pollinator visitations to annuals is greater under shrubs than in the paired-open microsites.  
+(2) Annual plants under flowering entomophilous shrubs (*Larrea tridentata*) will have a higher frequency of pollinator visitations than annual plants under anemophilous shrubs (*Ambrosia dumosa*) because of higher concentrations of floral resources for pollinators.  
+(3) Shrubs with annuals in their understory will have a higher frequency of pollinator visitations than shrubs without annuals due to increased concentrations of floral resources for pollinators.  
+(4) Sites with both shrubs and annuals will have the highest frequency of pollinator visitations to both the shrubs and the annuals. 
+
+An interesting corollary is that there are appropriate floral resources for desert pollinators, that they discriminate, and that entomophilous and anemophilous shrubs facilitate flowering similarly.
 
 ![](./map.jpg)
 
-###Field season: 2015
+###Data wrangling
+```{r library and data loads, warning=FALSE, message=FALSE}
+#libraries
+library(tidyverse)
+
+
+
+```
+
+### Data visualization
+```{r viz, warning=FALSE, message=FALSE}
+
+
+```
+
+###EDA
+```{r EDA, warning=FALSE, message=FALSE}
+
+
+```
+
+###Models
+```{r models, warning=FALSE, message=FALSE}
+
+
+```
+
+###Intrepretation
+
+
