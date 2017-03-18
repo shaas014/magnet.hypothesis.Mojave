@@ -317,25 +317,30 @@ kable(meta)</code></pre>
 </tbody>
 </table>
 <pre class="r"><code>#data
-data &lt;- read_csv(&quot;data/MNP.2015.csv&quot;)
+data.2015 &lt;- read_csv(&quot;data/MNP.2015.csv&quot;)
+data.2016 &lt;- read_csv(&quot;data/MNP.2016.csv&quot;)
+
+#merge
+data &lt;- rbind.data.frame(data.2015, data.2016)
 data</code></pre>
-<pre><code>## # A tibble: 1,335 × 16
-##    recorder      ID   day     date treatment   rep  name plant insect.RTU
-##       &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;     &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;      &lt;chr&gt;
-## 1      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         SB
-## 2      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MB
-## 3      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MB
-## 4      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         SF
-## 5      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         BF
-## 6      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MF
-## 7      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         SB
-## 8      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         SB
-## 9      Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MB
-## 10     Ally D5-OA-1    D5 01/04/15        OA     1 D5OA1     D         MB
-## # ... with 1,325 more rows, and 7 more variables: total.duration &lt;time&gt;,
-## #   floral.density &lt;int&gt;, start &lt;chr&gt;, stop &lt;chr&gt;,
-## #   visitation.duration &lt;time&gt;, flowers.visited &lt;int&gt;, X16 &lt;chr&gt;</code></pre>
+<pre><code>## # A tibble: 4,029 × 16
+##     year recorder      ID   day   date treatment   rep  name plant
+## *  &lt;int&gt;    &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;     &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;
+## 1   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 2   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 3   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 4   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 5   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 6   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 7   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 8   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 9   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## 10  2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
+## # ... with 4,019 more rows, and 7 more variables: insect.RTU &lt;chr&gt;,
+## #   total.duration &lt;time&gt;, floral.density &lt;int&gt;, start &lt;chr&gt;, stop &lt;chr&gt;,
+## #   visitation.duration &lt;time&gt;, flowers.visited &lt;int&gt;</code></pre>
 <pre class="r"><code>#tidy data to expand treatment column (current structure is a mix of two factors)
+
 
 #visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
 

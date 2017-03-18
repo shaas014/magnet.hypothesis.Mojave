@@ -43,10 +43,16 @@ meta <- read_csv("data/meta-data.csv")
 kable(meta)
 
 #data
-data <- read_csv("data/MNP.2015.csv")
+data.2015 <- read_csv("data/MNP.2015.csv")
+data.2016 <- read_csv("data/MNP.2016.csv")
+
+#merge
+data <- rbind.data.frame(data.2015, data.2016)
 data
 
+
 #tidy data to expand treatment column (current structure is a mix of two factors)
+
 
 #visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
 
