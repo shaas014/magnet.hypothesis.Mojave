@@ -80,7 +80,12 @@ datatable(frequency)
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
+#higher-order treatment patterns
+ggplot(frequency, aes(net.treatment, rate)) + geom_boxplot()
 
+ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~annuals)
+
+ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~annuals)
 
 ```
 
