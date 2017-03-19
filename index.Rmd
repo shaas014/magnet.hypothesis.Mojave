@@ -36,12 +36,12 @@ An interesting corollary is that there are appropriate floral resources for dese
 ```{r library and data loads, warning=FALSE, message=FALSE}
 #libraries
 library(tidyverse)
-library(knitr)
+library(DT)
 library(lubridate)
 
 #meta-data
 meta <- read_csv("data/meta-data.csv")
-kable(meta)
+datatable(meta)
 
 #data
 data.2015 <- read_csv("data/MNP.2015.csv")
@@ -74,6 +74,7 @@ frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals
 
 frequency$net.time <- as.numeric(frequency$net.time) #converts to total seconds
 frequency$rate <- as.numeric(frequency$count)/frequency$net.time #weight frequency by net time
+datatable(frequency)
 
 ```
 
