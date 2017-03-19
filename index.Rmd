@@ -37,6 +37,7 @@ An interesting corollary is that there are appropriate floral resources for dese
 #libraries
 library(tidyverse)
 library(knitr)
+library(lubridate)
 
 #meta-data
 meta <- read_csv("data/meta-data.csv")
@@ -48,13 +49,23 @@ data.2016 <- read_csv("data/MNP.2016.csv")
 
 #merge
 data <- rbind.data.frame(data.2015, data.2016)
-data
+data <- data %>% rename(net.treatment = treatment) %>% na.omit(data)
 
+#tidy data to expand treatment column (current structure is a mix of three factors)
+#microsite
+data <- data %>% mutate(microsite = ifelse(net.treatment %in% c("SA", "SAA", "SX"), "Larrea", ifelse(net.treatment %in% c("OA"), "open", ifelse(net.treatment %in% c("AMB"), "Ambrosia", NA))))
+length(unique(data$microsite))
 
-#tidy data to expand treatment column (current structure is a mix of two factors)
+#annuals
+data <- data %>% mutate(annuals = ifelse(net.treatment %in% c("SA", "SAA"), "annuals", ifelse(net.treatment %in% c("OA"), "annuals", ifelse(net.treatment %in% c("AMB"), "annuals", "none"))))
+length(unique(data$annuals))
 
+#flowering shrub
+data <- data %>% mutate(flowering.shrub = ifelse(net.treatment %in% c("SAA", "SX"), "flowering shrub", ifelse(net.treatment %in% c("AMB", "SA", "OA"), "no shrub flowers", "NA")))
+length(unique(data$annuals))
 
 #visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
+data <- data %>% mutate(vistitation.rate = as.duration(visitation.duration)/as.duration(total.duration))
 
 #frequency counts in a separate dataframe (weighted by duration of recording)
 

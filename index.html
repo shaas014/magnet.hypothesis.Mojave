@@ -242,6 +242,7 @@ div.tocify {
 <pre class="r"><code>#libraries
 library(tidyverse)
 library(knitr)
+library(lubridate)
 
 #meta-data
 meta &lt;- read_csv(&quot;data/meta-data.csv&quot;)
@@ -322,27 +323,23 @@ data.2016 &lt;- read_csv(&quot;data/MNP.2016.csv&quot;)
 
 #merge
 data &lt;- rbind.data.frame(data.2015, data.2016)
-data</code></pre>
-<pre><code>## # A tibble: 4,029 × 16
-##     year recorder      ID   day   date treatment   rep  name plant
-## *  &lt;int&gt;    &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;     &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;
-## 1   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 2   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 3   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 4   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 5   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 6   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 7   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 8   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 9   2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## 10  2015     Ally D5-OA-1    D5 1/4/15        OA     1 D5OA1     D
-## # ... with 4,019 more rows, and 7 more variables: insect.RTU &lt;chr&gt;,
-## #   total.duration &lt;time&gt;, floral.density &lt;int&gt;, start &lt;chr&gt;, stop &lt;chr&gt;,
-## #   visitation.duration &lt;time&gt;, flowers.visited &lt;int&gt;</code></pre>
-<pre class="r"><code>#tidy data to expand treatment column (current structure is a mix of two factors)
+data &lt;- data %&gt;% rename(net.treatment = treatment) %&gt;% na.omit(data)
 
-
-#visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
+#tidy data to expand treatment column (current structure is a mix of three factors)
+#microsite
+data &lt;- data %&gt;% mutate(microsite = ifelse(net.treatment %in% c(&quot;SA&quot;, &quot;SAA&quot;, &quot;SX&quot;), &quot;Larrea&quot;, ifelse(net.treatment %in% c(&quot;OA&quot;), &quot;open&quot;, ifelse(net.treatment %in% c(&quot;AMB&quot;), &quot;Ambrosia&quot;, NA))))
+length(unique(data$microsite))</code></pre>
+<pre><code>## [1] 3</code></pre>
+<pre class="r"><code>#annuals
+data &lt;- data %&gt;% mutate(annuals = ifelse(net.treatment %in% c(&quot;SA&quot;, &quot;SAA&quot;), &quot;annuals&quot;, ifelse(net.treatment %in% c(&quot;OA&quot;), &quot;annuals&quot;, ifelse(net.treatment %in% c(&quot;AMB&quot;), &quot;annuals&quot;, &quot;none&quot;))))
+length(unique(data$annuals))</code></pre>
+<pre><code>## [1] 2</code></pre>
+<pre class="r"><code>#flowering shrub
+data &lt;- data %&gt;% mutate(flowering.shrub = ifelse(net.treatment %in% c(&quot;SAA&quot;, &quot;SX&quot;), &quot;flowering shrub&quot;, ifelse(net.treatment %in% c(&quot;AMB&quot;, &quot;SA&quot;, &quot;OA&quot;), &quot;no shrub flowers&quot;, &quot;NA&quot;)))
+length(unique(data$annuals))</code></pre>
+<pre><code>## [1] 2</code></pre>
+<pre class="r"><code>#visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
+data &lt;- data %&gt;% mutate(vistitation.rate = as.duration(visitation.duration)/as.duration(total.duration))
 
 #frequency counts in a separate dataframe (weighted by duration of recording)
 
