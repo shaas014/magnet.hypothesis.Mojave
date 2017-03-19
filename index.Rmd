@@ -49,7 +49,9 @@ data.2016 <- read_csv("data/MNP.2016.csv")
 
 #merge
 data <- rbind.data.frame(data.2015, data.2016)
-data <- data %>% rename(net.treatment = treatment) %>% na.omit(data)
+data <- data %>% rename(net.treatment = treatment) %>% na.omit(data) 
+data$year <- as.character(data$year)
+data$rep <- as.character(data$rep)
 
 #tidy data to expand treatment column (current structure is a mix of three factors)
 #microsite
@@ -65,11 +67,17 @@ data <- data %>% mutate(flowering.shrub = ifelse(net.treatment %in% c("SAA", "SX
 length(unique(data$annuals))
 
 #visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
-data <- data %>% mutate(vistitation.rate = as.duration(visitation.duration)/as.duration(total.duration))
+data <- data %>% mutate(visitation.rate = as.duration(visitation.duration)/as.duration(total.duration))
 
 #frequency counts in a separate dataframe (weighted by duration of recording)
+frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% count(visitation.rate)
 
-#total visitation.duration per experimental day
+frequency2 <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% mutate(count = n())
+
+frequency3 <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% summarise(net.time = sum(visitation.duration))
+
+  
+#mutate(net.total.duration = sum(total.duration))mean.floral.density = mean(floral.density, total.flowers.visited = sum(flowers.visited), mean.visitation.rate = mean(visitation.rate)))total visitation.duration per experimental day
 
 
 ```
