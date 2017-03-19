@@ -341,17 +341,13 @@ data &lt;- data %&gt;% mutate(flowering.shrub = ifelse(net.treatment %in% c(&quo
 length(unique(data$annuals))</code></pre>
 <pre><code>## [1] 2</code></pre>
 <pre class="r"><code>#visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
-data &lt;- data %&gt;% mutate(visitation.rate = as.duration(visitation.duration)/as.duration(total.duration))
+data &lt;- data %&gt;% mutate(weighted.visitation.duration = as.duration(visitation.duration)/as.duration(total.duration))
 
 #frequency counts in a separate dataframe (weighted by duration of recording)
-frequency &lt;- data %&gt;% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %&gt;% count(visitation.rate)
+frequency &lt;- data %&gt;% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %&gt;% summarise(net.time = sum(visitation.duration), mean.visitation.duration = mean(weighted.visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
 
-frequency2 &lt;- data %&gt;% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %&gt;% mutate(count = n())
-
-frequency3 &lt;- data %&gt;% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %&gt;% summarise(net.time = sum(visitation.duration))
-
-  
-#mutate(net.total.duration = sum(total.duration))mean.floral.density = mean(floral.density, total.flowers.visited = sum(flowers.visited), mean.visitation.rate = mean(visitation.rate)))total visitation.duration per experimental day</code></pre>
+frequency$net.time &lt;- as.numeric(frequency$net.time) #converts to total seconds
+frequency$rate &lt;- as.numeric(frequency$count)/frequency$net.time #weight frequency by net time</code></pre>
 </div>
 <div id="data-visualization" class="section level3">
 <h3>Data visualization</h3>

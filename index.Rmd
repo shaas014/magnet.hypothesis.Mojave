@@ -67,18 +67,13 @@ data <- data %>% mutate(flowering.shrub = ifelse(net.treatment %in% c("SAA", "SX
 length(unique(data$annuals))
 
 #visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
-data <- data %>% mutate(visitation.rate = as.duration(visitation.duration)/as.duration(total.duration))
+data <- data %>% mutate(weighted.visitation.duration = as.duration(visitation.duration)/as.duration(total.duration))
 
 #frequency counts in a separate dataframe (weighted by duration of recording)
-frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% count(visitation.rate)
+frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% summarise(net.time = sum(visitation.duration), mean.visitation.duration = mean(weighted.visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
 
-frequency2 <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% mutate(count = n())
-
-frequency3 <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% summarise(net.time = sum(visitation.duration))
-
-  
-#mutate(net.total.duration = sum(total.duration))mean.floral.density = mean(floral.density, total.flowers.visited = sum(flowers.visited), mean.visitation.rate = mean(visitation.rate)))total visitation.duration per experimental day
-
+frequency$net.time <- as.numeric(frequency$net.time) #converts to total seconds
+frequency$rate <- as.numeric(frequency$count)/frequency$net.time #weight frequency by net time
 
 ```
 
