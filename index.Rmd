@@ -121,9 +121,31 @@ ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = mic
 
 ###EDA
 ```{r EDA, warning=FALSE, message=FALSE}
-#test distributions and explore outliers 
+#test distributions and explore outliers
+summary(frequency)
+
 #check orthogonality
-#check between years
+freq.2015 <- frequency %>% filter(year == 2015)
+freq.2016 <- frequency %>% filter(year == 2016)
+
+#annual treatment
+ggplot(freq.2015, aes(rate, fill = annuals)) + geom_histogram() + facet_wrap(~microsite)
+#only larrea tested annuals and no-annuals in 2015
+
+ggplot(freq.2016, aes(rate, fill = annuals)) + geom_histogram() + facet_wrap(~microsite)
+#only larrea tested annuals and no-annuals in 2016
+
+#flowering shrubs
+ggplot(freq.2015, aes(rate, fill = flowering.shrub)) + geom_histogram() + facet_wrap(~microsite)
+#ha, only larrea in 2015
+
+ggplot(freq.2016, aes(rate, fill = flowering.shrub)) + geom_histogram() + facet_wrap(~microsite)
+#ok, only larrea again but had ambrosia
+
+#conclusion, separate years
+require(fitdistrplus)
+descdist(freq.2015$rate, boot = 1000)
+descdist(freq.2016$rate, boot = 1000)
 
 ```
 
