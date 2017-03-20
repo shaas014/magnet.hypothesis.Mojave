@@ -23,10 +23,10 @@ knitr::opts_chunk$set(echo = TRUE)
 **Hypothesis:** Floral resource island created by shrubs and the associated beneficiary annual plants will positively and non-additively influence pollinator visitation rates. 
 
 **Predictions:**  
-(1) The frequency of pollinator visitations to annuals is greater under shrubs than in the paired-open microsites.  
-(2) Annual plants under flowering entomophilous shrubs (*Larrea tridentata*) will have a higher frequency of pollinator visitations than annual plants under anemophilous shrubs (*Ambrosia dumosa*) because of higher concentrations of floral resources for pollinators.  
-(3) Shrubs with annuals in their understory will have a higher frequency of pollinator visitations than shrubs without annuals due to increased concentrations of floral resources for pollinators.  
-(4) Sites with both shrubs and annuals will have the highest frequency of pollinator visitations to both the shrubs and the annuals. 
+(1) The frequency and duration of pollinator visitations to annuals is greater under shrubs than in the paired-open microsites (magnet H because of concentration).  
+(2) Annual plants under flowering entomophilous shrubs (*Larrea tridentata*) will have a higher frequency and duration of pollinator visitations than annual plants under anemophilous shrubs (*Ambrosia dumosa*) because of higher concentrations of suitable floral resources for pollinators (specificity of pollinator faciliation).  
+(3) Shrubs with annuals in their understory will have a higher frequency and duration of pollinator visitations than shrubs without annuals due to increased concentrations of floral resources for pollinators (reverse magnet effect and reciprocal benefits).  
+(4) Sites with both shrubs and annuals will have the highest frequency and duration of pollinator visitations to both the shrubs and the annuals (i.e. annuals under shrubs also with flowers are visited the most).
 
 An interesting corollary is that there are appropriate floral resources for desert pollinators, that they discriminate, and that entomophilous and anemophilous shrubs facilitate flowering similarly.
 
@@ -62,15 +62,15 @@ length(unique(data$microsite))
 data <- data %>% mutate(annuals = ifelse(net.treatment %in% c("SA", "SAA"), "annuals", ifelse(net.treatment %in% c("OA"), "annuals", ifelse(net.treatment %in% c("AMB"), "annuals", "none"))))
 length(unique(data$annuals))
 
-#flowering shrub
-data <- data %>% mutate(flowering.shrub = ifelse(net.treatment %in% c("SAA", "SX"), "flowering shrub", ifelse(net.treatment %in% c("AMB", "SA", "OA"), "no shrub flowers", "NA")))
+#target flowers
+data <- data %>% mutate(target.flowers = ifelse(net.treatment %in% c("SA", "SX"), "shrub flowers", ifelse(net.treatment %in% c("AMB", "SAA", "OA"), "annual plant flowers", "NA")))
 length(unique(data$annuals))
 
 #visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
 data <- data %>% mutate(weighted.visitation.duration = as.duration(visitation.duration)/as.duration(total.duration))
 
 #frequency counts in a separate dataframe (weighted by duration of recording)
-frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(weighted.visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
+frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(weighted.visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
 
 frequency$net.time <- as.numeric(frequency$net.time) #converts to total seconds
 frequency$rate <- as.numeric(frequency$count)/frequency$net.time #weight frequency by net time
@@ -85,7 +85,7 @@ ggplot(frequency, aes(net.treatment, rate)) + geom_boxplot() + facet_wrap(~year)
 
 ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~year*annuals)
 
-ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~year*annuals*flowering.shrub)
+ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~year*target.flowers)
 
 #relationships with sampling effort
 ggplot(frequency, aes(net.time, count, color = year)) + geom_point()
@@ -104,7 +104,7 @@ ggplot(frequency, aes(net.treatment, mean.visitation.duration)) + geom_boxplot()
 
 ggplot(frequency, aes(microsite, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year*annuals)
 
-ggplot(frequency, aes(microsite, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year*annuals*flowering.shrub)
+ggplot(frequency, aes(microsite, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year*annuals*target.flowers)
 
 #relationships with sampling effort
 ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point()
@@ -135,11 +135,11 @@ ggplot(freq.2015, aes(rate, fill = annuals)) + geom_histogram() + facet_wrap(~mi
 ggplot(freq.2016, aes(rate, fill = annuals)) + geom_histogram() + facet_wrap(~microsite)
 #only larrea tested annuals and no-annuals in 2016
 
-#flowering shrubs
-ggplot(freq.2015, aes(rate, fill = flowering.shrub)) + geom_histogram() + facet_wrap(~microsite)
+#target flowers
+ggplot(freq.2015, aes(rate, fill = target.flowers)) + geom_histogram() + facet_wrap(~microsite)
 #ha, only larrea in 2015
 
-ggplot(freq.2016, aes(rate, fill = flowering.shrub)) + geom_histogram() + facet_wrap(~microsite)
+ggplot(freq.2016, aes(rate, fill = target.flowers)) + geom_histogram() + facet_wrap(~microsite)
 #ok, only larrea again but had ambrosia
 
 #conclusion, separate years
@@ -147,6 +147,9 @@ require(fitdistrplus)
 descdist(freq.2015$rate, boot = 1000)
 descdist(freq.2016$rate, boot = 1000)
 detach("package:fitdistrplus", unload = TRUE)
+
+#explore temperature on count and mean visitation rates
+
 
 ```
 
