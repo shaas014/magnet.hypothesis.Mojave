@@ -194,7 +194,7 @@ require(lsmeans)
 lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
 #treatments split out
-
+#how to test?
 
 ```
 
