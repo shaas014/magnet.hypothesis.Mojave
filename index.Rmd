@@ -80,14 +80,43 @@ datatable(frequency)
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
-#higher-order treatment patterns
-#
+#higher-order treatment patterns in frequency####
 ggplot(frequency, aes(net.treatment, rate)) + geom_boxplot() + facet_wrap(~year)
 
 ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~year*annuals)
 
 ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~year*annuals*flowering.shrub)
 
+#relationships with sampling effort
+ggplot(frequency, aes(net.time, count, color = year)) + geom_point()
+
+ggplot(frequency, aes(net.time, count, color = year)) + geom_point() + facet_wrap(~microsite)
+
+#floral density
+ggplot(frequency, aes(mean.floral.density, rate, color = year)) + geom_point()
+
+ggplot(frequency, aes(mean.floral.density, rate, color = microsite)) + geom_point() + facet_wrap(~year)
+
+ggplot(frequency, aes(mean.floral.density, rate, color = microsite)) + geom_point() + facet_wrap(~year)
+
+#mean visitation duration is also really important because you have more visits or longer visits####
+ggplot(frequency, aes(net.treatment, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year)
+
+ggplot(frequency, aes(microsite, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year*annuals)
+
+ggplot(frequency, aes(microsite, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year*annuals*flowering.shrub)
+
+#relationships with sampling effort
+ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point()
+
+ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite)
+
+#floral density
+ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = year)) + geom_point()
+
+ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = microsite)) + geom_point() + facet_wrap(~year)
+
+ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = microsite)) + geom_point() + facet_wrap(~year)
 ```
 
 ###EDA
