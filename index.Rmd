@@ -199,7 +199,14 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 ```
 
 ###Intrepretation
-1. Using the simplest models with all treatment levels aggregated but split by years, larrea is the most important magnet for frequency of visits (weighting for net.time recorded and using floral density as a covariate). This is a reasonable test because it captures enough of the variation and address non-orthogonality levels.
+**Net.treatment models**  
+1. Using the simplest models with all treatment levels aggregated but split by years, larrea is the most important magnet for frequency of visits (weighting for net.time recorded and using floral density as a covariate). This is a reasonable test because it captures enough of the variation and address non-orthogonality levels.\
+
+2. Mean visitation rate in 2015 significantly differed between larea with flowers and open and larea with flowers and annuals versus larrea without. This strongly suggests a double-magnet effect this season. In 2016, larrea flowering with annuals was also significantly greater than open microsites with annuals.
+
+3. Double-magnet supported for frequency too.
+
+4. Then check each prediction. Need to think over how to handle double-magnet H.
 
 
 
