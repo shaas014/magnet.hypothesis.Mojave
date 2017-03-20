@@ -156,21 +156,38 @@ detach("package:fitdistrplus", unload = TRUE)
 #library(MASS) #need for glm.nb
 
 #all codes
-#2015
-m <- glm(count~net.treatment, family = "poisson", weight = net.time, data = freq.2015)
+#2015 counts
+m <- glm(count~net.treatment + mean.floral.density, family = "poisson", weight = net.time, data = freq.2015)
 anova(m, test = "Chisq") 
 
-ggplot(freq.2015, aes(count, fill = microsite, weight = net.time)) + geom_histogram(binwidth = 10) + scale_fill_brewer(palette = "Blues") #not a bad plot
+ggplot(freq.2015, aes(count, fill = microsite, weight = net.time)) + geom_histogram(binwidth = 10) + scale_fill_brewer(palette = "Blues") #like it
+
+#posthoc test
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+#2016 counts
+m <- glm(count~net.treatment + mean.floral.density, family = "poisson", weight = net.time, data = freq.2016)
+anova(m, test = "Chisq") 
+
+ggplot(freq.2016, aes(count, fill = microsite, weight = net.time)) + geom_histogram(binwidth = 10) + scale_fill_brewer(palette = "Blues") #good plot
+
+#posthoc test
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+#repeat above for mean.visitation.duration
+#2015
+m <- glm(mean.visitation.duration~net.treatment + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2015)
+anova(m, test = "Chisq") 
 
 #posthoc test
 require(lsmeans)
 lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
 #2016
-m <- glm(count~net.treatment, family = "poisson", weight = net.time, data = freq.2016)
+m <- glm(mean.visitation.duration~net.treatment + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2016)
 anova(m, test = "Chisq") 
-
-ggplot(freq.2016, aes(count, fill = microsite, weight = net.time)) + geom_histogram(binwidth = 10) + scale_fill_brewer(palette = "Blues") #not a bad plot
 
 #posthoc test
 require(lsmeans)
@@ -182,5 +199,8 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 ```
 
 ###Intrepretation
+1. Using the simplest models with all treatment levels aggregated but split by years, larrea is the most important magnet for frequency of visits (weighting for net.time recorded and using floral density as a covariate). This is a reasonable test because it captures enough of the variation and address non-orthogonality levels.
+
+
 
 
