@@ -146,14 +146,38 @@ ggplot(freq.2016, aes(rate, fill = flowering.shrub)) + geom_histogram() + facet_
 require(fitdistrplus)
 descdist(freq.2015$rate, boot = 1000)
 descdist(freq.2016$rate, boot = 1000)
+detach("package:fitdistrplus", unload = TRUE)
 
 ```
 
 ###Models
 ```{r models, warning=FALSE, message=FALSE}
-#GLM, family poisson, likely good to go
-#use lsmeans to contrast levels
-#use above EDA to decide if do each year separately
+#GLM for count and weight by net.time (alt - use MASS and glm.nb)
+#library(MASS) #need for glm.nb
+
+#all codes
+#2015
+m <- glm(count~net.treatment, family = "poisson", weight = net.time, data = freq.2015)
+anova(m, test = "Chisq") 
+
+ggplot(freq.2015, aes(count, fill = microsite, weight = net.time)) + geom_histogram(binwidth = 10) + scale_fill_brewer(palette = "Blues") #not a bad plot
+
+#posthoc test
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+#2016
+m <- glm(count~net.treatment, family = "poisson", weight = net.time, data = freq.2016)
+anova(m, test = "Chisq") 
+
+ggplot(freq.2016, aes(count, fill = microsite, weight = net.time)) + geom_histogram(binwidth = 10) + scale_fill_brewer(palette = "Blues") #not a bad plot
+
+#posthoc test
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+#treatments split out
+
 
 ```
 
