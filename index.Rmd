@@ -70,7 +70,7 @@ length(unique(data$annuals))
 data <- data %>% mutate(weighted.visitation.duration = as.duration(visitation.duration)/as.duration(total.duration))
 
 #frequency counts in a separate dataframe (weighted by duration of recording)
-frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% summarise(net.time = sum(visitation.duration), mean.visitation.duration = mean(weighted.visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
+frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, flowering.shrub) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(weighted.visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
 
 frequency$net.time <- as.numeric(frequency$net.time) #converts to total seconds
 frequency$rate <- as.numeric(frequency$count)/frequency$net.time #weight frequency by net time
@@ -81,6 +81,7 @@ datatable(frequency)
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
 #higher-order treatment patterns
+#
 ggplot(frequency, aes(net.treatment, rate)) + geom_boxplot() + facet_wrap(~year)
 
 ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~year*annuals)
