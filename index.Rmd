@@ -58,7 +58,7 @@ data$rep <- as.character(data$rep)
 data <- data %>% mutate(microsite = ifelse(net.treatment %in% c("SA", "SAA", "SX"), "Larrea", ifelse(net.treatment %in% c("OA"), "open", ifelse(net.treatment %in% c("AMB"), "Ambrosia", NA))))
 length(unique(data$microsite))
 
-#annuals
+#annuals present
 data <- data %>% mutate(annuals = ifelse(net.treatment %in% c("SA", "SAA"), "annuals", ifelse(net.treatment %in% c("OA"), "annuals", ifelse(net.treatment %in% c("AMB"), "annuals", "none"))))
 length(unique(data$annuals))
 
@@ -67,25 +67,39 @@ data <- data %>% mutate(target.flowers = ifelse(net.treatment %in% c("SA", "SX")
 length(unique(data$annuals))
 
 #visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
-data <- data %>% mutate(weighted.visitation.duration = as.duration(visitation.duration)/as.duration(total.duration))
+#data <- data %>% mutate(weighted.visitation.duration = as.duration(visitation.duration)/as.duration(total.duration)) #do not need at this step
 
 #frequency counts in a separate dataframe (weighted by duration of recording)
-frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(weighted.visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
+frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
 
 frequency$net.time <- as.numeric(frequency$net.time) #converts to total seconds
-frequency$rate <- as.numeric(frequency$count)/frequency$net.time #weight frequency by net time
+frequency$mean.visitation.duration <- as.numeric(frequency$mean.visitation.duration) #converts to total seconds
+frequency$count <- as.numeric(frequency$count)
+
+frequency$rate <- as.numeric(frequency$count)/frequency$net.time #weight by net time
+frequency$proportion.visitations <- frequency$mean.visitation.duration/frequency$net.time
+frequency$rate.per.flower <- frequency$count/frequency$mean.floral.density
 datatable(frequency)
+
+#repeat above with RTU as factor
+
+#repeat above but with RTU as species diversity response
+
+#split out by year because of non-orthogonality
+freq.2015 <- frequency %>% filter(year == 2015)
+freq.2016 <- frequency %>% filter(year == 2016)
 
 ```
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
-#higher-order treatment patterns in frequency####
+#Higher-order treatment patterns in frequency####
+#Collapsed single factor model
 ggplot(frequency, aes(net.treatment, rate)) + geom_boxplot() + facet_wrap(~year)
 
-ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~year*annuals)
+ggplot(frequency, aes(net.treatment, proportion.visitations)) + geom_boxplot() + facet_wrap(~year)
 
-ggplot(frequency, aes(microsite, rate)) + geom_boxplot() + facet_wrap(~year*target.flowers)
+ggplot(frequency, aes(microsite, rate, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
 
 #relationships with sampling effort
 ggplot(frequency, aes(net.time, count, color = year)) + geom_point()
@@ -100,49 +114,20 @@ ggplot(frequency, aes(mean.floral.density, rate, color = microsite)) + geom_poin
 ggplot(frequency, aes(mean.floral.density, rate, color = microsite)) + geom_point() + facet_wrap(~year)
 
 #mean visitation duration is also really important because you have more visits or longer visits####
-ggplot(frequency, aes(net.treatment, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year)
-
-ggplot(frequency, aes(microsite, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year*annuals)
-
-ggplot(frequency, aes(microsite, mean.visitation.duration)) + geom_boxplot() + facet_wrap(~year*annuals*target.flowers)
+ggplot(frequency, aes(net.treatment, mean.visitation.duration, color = microsite)) + geom_boxplot() + facet_wrap(~year)
 
 #relationships with sampling effort
-ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point()
-
-ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite)
+ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite*target.flowers)
 
 #floral density
-ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = year)) + geom_point()
+ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite)
 
-ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = microsite)) + geom_point() + facet_wrap(~year)
-
-ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = microsite)) + geom_point() + facet_wrap(~year)
 ```
 
 ###EDA
 ```{r EDA, warning=FALSE, message=FALSE}
 #test distributions and explore outliers
 summary(frequency)
-
-#check orthogonality
-freq.2015 <- frequency %>% filter(year == 2015)
-freq.2016 <- frequency %>% filter(year == 2016)
-
-#annual treatment
-ggplot(freq.2015, aes(rate, fill = annuals)) + geom_histogram() + facet_wrap(~microsite)
-#only larrea tested annuals and no-annuals in 2015
-
-ggplot(freq.2016, aes(rate, fill = annuals)) + geom_histogram() + facet_wrap(~microsite)
-#only larrea tested annuals and no-annuals in 2016
-
-#target flowers
-ggplot(freq.2015, aes(rate, fill = target.flowers)) + geom_histogram() + facet_wrap(~microsite)
-#ha, only larrea in 2015
-
-ggplot(freq.2016, aes(rate, fill = target.flowers)) + geom_histogram() + facet_wrap(~microsite)
-#ok, only larrea again but had ambrosia
-
-#conclusion, separate years
 require(fitdistrplus)
 descdist(freq.2015$rate, boot = 1000)
 descdist(freq.2016$rate, boot = 1000)
@@ -163,8 +148,6 @@ detach("package:fitdistrplus", unload = TRUE)
 m <- glm(count~net.treatment + mean.floral.density, family = "poisson", weight = net.time, data = freq.2015)
 anova(m, test = "Chisq") 
 
-ggplot(freq.2015, aes(count, fill = microsite, weight = net.time)) + geom_histogram(binwidth = 10) + scale_fill_brewer(palette = "Blues") #like it
-
 #posthoc test
 require(lsmeans)
 lsmeans(m, pairwise~net.treatment, adjust="tukey")
@@ -172,8 +155,6 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 #2016 counts
 m <- glm(count~net.treatment + mean.floral.density, family = "poisson", weight = net.time, data = freq.2016)
 anova(m, test = "Chisq") 
-
-ggplot(freq.2016, aes(count, fill = microsite, weight = net.time)) + geom_histogram(binwidth = 10) + scale_fill_brewer(palette = "Blues") #good plot
 
 #posthoc test
 require(lsmeans)
@@ -201,7 +182,7 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
 ```
 
-###Intrepretation
+###Interpretation
 **Net.treatment models**  
 1. Using the simplest models with all treatment levels aggregated but split by years, larrea is the most important magnet for frequency of visits (weighting for net.time recorded and using floral density as a covariate). This is a reasonable test because it captures enough of the variation and address non-orthogonality levels.\
 
