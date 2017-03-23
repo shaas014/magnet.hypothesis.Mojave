@@ -78,6 +78,10 @@ frequency$proportion.visitations <- frequency$mean.visitation.duration/frequency
 frequency$rate.per.flower <- frequency$count/frequency$mean.floral.density
 datatable(frequency)
 
+#FILTER OUT ANNUALS VERSUS SHRUB FLOWERS
+frequency.annuals <- frequency %>% filter(target.flowers == "annual plant flowers")
+frequency.shrubs <- frequency %>% filter(target.flowers == "shrub flowers")
+
 #repeat above with RTU as factor
 frequency.by.RTU <- data %>% group_by(year, day, net.treatment, insect.RTU, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), mean.floral.density = mean(floral.density), count = n())
 
@@ -125,6 +129,8 @@ ggplot(frequency, aes(microsite, rate, fill = target.flowers)) + geom_boxplot() 
 
 ggplot(frequency, aes(microsite, count, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
 
+ggplot(frequency, aes(microsite, count, weight = net.time, fill = target.flowers)) + geom_histogram(stat="identity") + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
+
 ggplot(frequency, aes(microsite, rate.per.flower, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
 
 ggplot(frequency, aes(microsite, proportion.visitations, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
@@ -145,6 +151,7 @@ ggplot(frequency, aes(mean.floral.density, proportion.visitations, color = micro
 ggplot(frequency, aes(net.time, rate, color = year)) + geom_point() + facet_wrap(~microsite*target.flowers)
 
 ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite*target.flowers)
+
 
 
 ```
@@ -168,7 +175,7 @@ detach("package:fitdistrplus", unload = TRUE)
 #GLM for count and weight by net.time (alt - use MASS and glm.nb)
 #library(MASS) #need for glm.nb
 
-#all codes
+#all codes aggregated
 #2015 counts
 m <- glm(count~net.treatment + mean.floral.density, family = "poisson", weight = net.time, data = freq.2015)
 anova(m, test = "Chisq") 
@@ -202,8 +209,75 @@ anova(m, test = "Chisq")
 require(lsmeans)
 lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
+#2015 visitation rates 
+#suggestion here to use offset instead ratios http://stats.stackexchange.com/questions/164889/how-to-deal-with-non-integer-warning-from-negative-binomial-glm
+m <- glm(rate~net.treatment + mean.floral.density, family = "poisson", data = freq.2015)
+anova(m, test = "Chisq") 
+
+#posthoc test
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+#2016 visitation rates 
+m <- glm(rate~net.treatment + mean.floral.density, family = "poisson", data = freq.2016)
+anova(m, test = "Chisq") 
+
+#posthoc test
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
 #treatments split out
-#how to test?
+#2015
+m <- glm(mean.visitation.duration~microsite*annuals*target.flowers + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2015)
+anova(m, test = "Chisq") 
+
+lsmeans(m, pairwise~microsite*annuals*target.flowers, adjust="tukey")
+
+#2016
+m <- glm(mean.visitation.duration~microsite*annuals*target.flowers + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2016)
+anova(m, test = "Chisq") 
+
+lsmeans(m, pairwise~microsite*annuals*target.flowers, adjust="tukey")
+
+#2015
+m <- glm(rate~microsite*annuals*target.flowers + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2015)
+anova(m, test = "Chisq") 
+
+lsmeans(m, pairwise~microsite*annuals*target.flowers, adjust="tukey")
+
+#2016
+m <- glm(rate~microsite*annuals*target.flowers + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2016)
+anova(m, test = "Chisq") 
+
+lsmeans(m, pairwise~microsite*annuals*target.flowers, adjust="tukey")
+
+#2015
+m <- glm(rate.per.flower~microsite*annuals*target.flowers + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2015)
+anova(m, test = "Chisq") 
+
+lsmeans(m, pairwise~microsite*annuals*target.flowers, adjust="tukey")
+
+#2016
+m <- glm(rate.per.flower~microsite*annuals*target.flowers + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2016)
+anova(m, test = "Chisq") 
+
+lsmeans(m, pairwise~microsite*annuals*target.flowers, adjust="tukey")
+
+#2015
+m <- glm(mean.insect.RTU~microsite*annuals*target.flowers + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2015)
+anova(m, test = "Chisq") 
+
+lsmeans(m, pairwise~microsite*annuals*target.flowers, adjust="tukey")
+
+#2016
+m <- glm(mean.insect.RTU~microsite*annuals*target.flowers + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2016)
+anova(m, test = "Chisq") 
+
+lsmeans(m, pairwise~microsite*annuals*target.flowers, adjust="tukey")
+
+#Then test RTU nested within rep
+
+#Then test in ONE model, frequency, with year as a factor.
 
 ```
 
