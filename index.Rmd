@@ -100,13 +100,36 @@ freq.2016 <- frequency %>% filter(year == 2016)
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
+#Ideal figures for publication.
+#Two figures total: 1(a) rate, (b) duration and 2(a) rate per RTU and (b) mean visitation rate per RTU - maybe I think there are other options.  ADD insect.RTU richness
+
 #Higher-order treatment patterns in frequency####
 #Collapsed single factor model
-ggplot(frequency, aes(net.treatment, rate)) + geom_boxplot() + facet_wrap(~year)
+ggplot(frequency, aes(net.treatment, rate)) + geom_boxplot() + ylab("visitation rate") + facet_wrap(~year)
 
-ggplot(frequency, aes(net.treatment, proportion.visitations)) + geom_boxplot() + facet_wrap(~year)
+ggplot(frequency, aes(net.treatment, count)) + geom_boxplot() + ylab("visitations") + facet_wrap(~year)
 
+ggplot(frequency, aes(net.treatment, rate.per.flower)) + geom_boxplot() + ylab("visitations per flower") + facet_wrap(~year)
+
+ggplot(frequency, aes(net.treatment, proportion.visitations)) + geom_boxplot() + ylab("mean duration of visit per total duration recorded") + facet_wrap(~year)
+
+ggplot(frequency, aes(net.treatment, mean.insect.RTU)) + geom_boxplot() + ylab("mean RTU richness") + facet_wrap(~year)
+
+#net treatment per RTU
+ggplot(frequency.by.RTU, aes(net.treatment, rate)) + geom_boxplot() + ylab("visitation rate") + facet_wrap(~insect.RTU*year)
+
+ggplot(frequency.by.RTU, aes(net.treatment, proportion.visitations)) + geom_boxplot() + ylab("mean duration of visit per total duration recorded") + facet_wrap(~insect.RTU*year)
+
+#Treatments separated
 ggplot(frequency, aes(microsite, rate, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
+
+ggplot(frequency, aes(microsite, count, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
+
+ggplot(frequency, aes(microsite, rate.per.flower, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
+
+ggplot(frequency, aes(microsite, proportion.visitations, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
+
+ggplot(frequency, aes(microsite, mean.insect.RTU, fill = target.flowers)) + geom_boxplot() + facet_wrap(~year) + scale_fill_brewer(palette = "YlGn")
 
 #relationships with sampling effort
 ggplot(frequency, aes(net.time, count, color = year)) + geom_point()
@@ -114,20 +137,15 @@ ggplot(frequency, aes(net.time, count, color = year)) + geom_point()
 ggplot(frequency, aes(net.time, count, color = year)) + geom_point() + facet_wrap(~microsite)
 
 #floral density
-ggplot(frequency, aes(mean.floral.density, rate, color = year)) + geom_point()
-
 ggplot(frequency, aes(mean.floral.density, rate, color = microsite)) + geom_point() + facet_wrap(~year)
 
-ggplot(frequency, aes(mean.floral.density, rate, color = microsite)) + geom_point() + facet_wrap(~year)
-
-#mean visitation duration is also really important because you have more visits or longer visits####
-ggplot(frequency, aes(net.treatment, mean.visitation.duration, color = microsite)) + geom_boxplot() + facet_wrap(~year)
+ggplot(frequency, aes(mean.floral.density, proportion.visitations, color = microsite)) + geom_point() + facet_wrap(~year)
 
 #relationships with sampling effort
+ggplot(frequency, aes(net.time, rate, color = year)) + geom_point() + facet_wrap(~microsite*target.flowers)
+
 ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite*target.flowers)
 
-#floral density
-ggplot(frequency, aes(mean.floral.density, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite)
 
 ```
 
