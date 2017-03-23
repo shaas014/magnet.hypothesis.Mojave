@@ -66,11 +66,8 @@ length(unique(data$annuals))
 data <- data %>% mutate(target.flowers = ifelse(net.treatment %in% c("SA", "SX"), "shrub flowers", ifelse(net.treatment %in% c("AMB", "SAA", "OA"), "annual plant flowers", "NA")))
 length(unique(data$annuals))
 
-#visitation duration needs to be weighted by duration (i.e. total recording time to address sampling effort)
-#data <- data %>% mutate(weighted.visitation.duration = as.duration(visitation.duration)/as.duration(total.duration)) #do not need at this step
-
 #frequency counts in a separate dataframe (weighted by duration of recording)
-frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), mean.floral.density = mean(floral.density), count = n()) 
+frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), mean.floral.density = mean(floral.density), mean.insect.RTU = n_distinct(insect.RTU), count = n())
 
 frequency$net.time <- as.numeric(frequency$net.time) #converts to total seconds
 frequency$mean.visitation.duration <- as.numeric(frequency$mean.visitation.duration) #converts to total seconds
@@ -82,6 +79,16 @@ frequency$rate.per.flower <- frequency$count/frequency$mean.floral.density
 datatable(frequency)
 
 #repeat above with RTU as factor
+frequency.by.RTU <- data %>% group_by(year, day, net.treatment, insect.RTU, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), mean.floral.density = mean(floral.density), count = n())
+
+frequency.by.RTU$net.time <- as.numeric(frequency.by.RTU$net.time) #converts to total seconds
+frequency.by.RTU$mean.visitation.duration <- as.numeric(frequency.by.RTU$mean.visitation.duration) #converts to total seconds
+frequency.by.RTU$count <- as.numeric(frequency.by.RTU$count)
+
+frequency.by.RTU$rate <- as.numeric(frequency.by.RTU$count)/frequency.by.RTU$net.time #weight by net time
+frequency.by.RTU$proportion.visitations <- frequency.by.RTU$mean.visitation.duration/frequency.by.RTU$net.time
+frequency.by.RTU$rate.per.flower <- frequency.by.RTU$count/frequency.by.RTU$mean.floral.density
+datatable(frequency.by.RTU)
 
 #repeat above but with RTU as species diversity response
 
