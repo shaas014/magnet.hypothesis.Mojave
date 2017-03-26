@@ -1,3 +1,110 @@
+###Data
+```{r saved}
+#libraries####
+library(tidyverse)
+library(DT)
+library(lubridate)
+
+#meta-data####
+meta <- read_csv("data/meta-data.csv")
+datatable(meta)
+
+#data####
+data.2015 <- read_csv("data/MNP.2015.csv")
+data.2016 <- read_csv("data/MNP.2016.csv")
+
+#merge
+data <- rbind.data.frame(data.2015, data.2016)
+
+#code treatment properly
+data <- data %>% rename(net.treatment = treatment) #%>% na.omit(data) 
+
+#keep key columns and minimize working dataframe
+data <- data %>% select(-name, -plant, -start, -stop, -ID, -recorder)
+
+#set year and rep as characters
+data$year <- as.character(data$year)
+data$rep <- as.character(data$rep)
+
+#convert times to total seconds
+data$total.duration <- as.numeric(data$total.duration)
+data$visitation.duration <- as.numeric(data$visitation.duration)
+
+#mute all code, will use net.treatment
+#tidy data to expand treatment column (current structure is a mix of three factors)
+#microsite
+#data <- data %>% mutate(microsite = ifelse(net.treatment %in% c("SA", "SAA", "SX"), "Larrea", ifelse(net.treatment %in% c("OA"), "open", ifelse(net.treatment %in% c("AMB"), "Ambrosia", NA))))
+#length(unique(data$microsite))
+
+#annuals present
+#data <- data %>% mutate(annuals = ifelse(net.treatment %in% c("SA", "SAA"), "annuals", ifelse(net.treatment %in% c("OA"), "annuals", ifelse(net.treatment %in% c("AMB"), "annuals", "none"))))
+#length(unique(data$annuals))
+
+#target flowers
+#data <- data %>% mutate(target.flowers = ifelse(net.treatment %in% c("SA", "SX"), "shrub flowers", ifelse(net.treatment %in% c("AMB", "SAA", "OA"), "annual plant flowers", "NA")))
+#length(unique(data$target.flowers))
+
+#recode net.treatment column
+data <- data %>% mutate(net.treatment = ifelse(net.treatment %in% c("SA"), "Larrea flowers with annuals", ifelse(net.treatment %in% c("SX"), "Larrea flowers without annuals", ifelse(net.treatment %in% c("SAA"), "Annual flowers under Larrea",ifelse(net.treatment %in% c("OA"), "Annual flowers in open",ifelse(net.treatment %in% c("AMB"), "Annual flowers under Ambrosia","NA"))))))
+
+#frequency in a separate dataframe####
+#frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), summed.visitation.duration = sum(visitation.duration), mean.floral.density = mean(floral.density), mean.insect.RTU = n_distinct(insect.RTU), count = n())
+
+#frequency <- data %>% group_by(year, day, net.treatment, rep) %>% 
+#summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), summed.visitation.duration = sum(visitation.duration), mean.floral.density = mean(floral.density), mean.insect.RTU = n_distinct(insect.RTU), count = n())
+
+#frequency$net.time <- as.numeric(frequency$net.time) #converts to total seconds
+#frequency$mean.visitation.duration <- as.numeric(frequency$mean.visitation.duration) #converts to total seconds
+#frequency$summed.visitation.duration <- as.numeric(frequency$summed.visitation.duration) #converts to total seconds
+#frequency$count <- as.numeric(frequency$count)
+
+#frequency$rate <- as.numeric(frequency$count)/frequency$net.time #weight by net time
+#frequency$proportion.visitations <- frequency$mean.visitation.duration/frequency$net.time
+#frequency$rate.per.flower <- frequency$count/frequency$mean.floral.density
+#datatable(frequency)
+
+#frequency$visitations.hr <- frequency$proportion.visitations*60
+#frequency$rate.per.flower.hr <- frequency$rate.per.flower*60
+
+#FILTER OUT ANNUALS VERSUS SHRUB FLOWERS
+#frequency.annuals <- frequency %>% filter(target.flowers == "annual plant flowers")
+#frequency.shrubs <- frequency %>% filter(target.flowers == "shrub flowers")
+
+#repeat above with RTU as factor####
+#frequency.by.RTU <- data %>% group_by(year, day, net.treatment, insect.RTU, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), summed.visitation.duration = sum(visitation.duration), mean.floral.density = mean(floral.density), count = n())
+
+frequency.by.RTU <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>% 
+  summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), summed.visitation.duration = sum(visitation.duration), mean.floral.density = mean(floral.density), total.floral.density = sum(floral.density), count = n())
+
+#frequency.by.RTU$net.time <- as.numeric(frequency.by.RTU$net.time) #converts to total seconds
+#frequency.by.RTU$mean.visitation.duration <- as.numeric(frequency.by.RTU$mean.visitation.duration) #converts to total seconds
+#frequency.by.RTU$summed.visitation.duration <- as.numeric(frequency.by.RTU$summed.visitation.duration)
+frequency.by.RTU$count <- as.numeric(frequency.by.RTU$count)
+
+#frequency.by.RTU$rate <- as.numeric(frequency.by.RTU$count)/frequency.by.RTU$net.time #weight by net time
+
+#frequency.by.RTU$proportion.visitations <- frequency.by.RTU$mean.visitation.duration/frequency.by.RTU$net.time
+
+#frequency.by.RTU$rate.per.flower <- frequency.by.RTU$count/frequency.by.RTU$mean.floral.density
+
+
+frequency.by.RTU$rate.per.flower.hr <- (frequency.by.RTU$count/(frequency.by.RTU$mean.floral.density)/(frequency.by.RTU$net.time))*3600
+
+#frequency.by.RTU$visitation.duration.hr <- frequency.by.RTU$summed.visitation.duration*3600
+
+datatable(frequency.by.RTU)
+
+#frequency.by.RTU$visitations.hr <- frequency.by.RTU$proportion.visitations*60
+#frequency.by.RTU$rate.per.flower.hr <- frequency.by.RTU$rate.per.flower*60
+
+
+#split out by year because of non-orthogonality
+#freq.2015 <- frequency %>% filter(year == 2015)
+#freq.2016 <- frequency %>% filter(year == 2016)
+
+```
+
+
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
 #Ideal figures for publication.

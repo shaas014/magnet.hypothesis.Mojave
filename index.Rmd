@@ -12,9 +12,6 @@ output:
     toc: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 ![](./MNP.jpg)
 
 ### Magnet hypothesis: plant-pollinator interactions
@@ -33,202 +30,89 @@ An interesting corollary is that there are appropriate floral resources for dese
 ![](./map.jpg)
 
 ###Data wrangling
-```{r library and data loads, warning=FALSE, message=FALSE}
-#libraries
+```{r library and data loads, warning=FALSE, message=FALSE, echo=FALSE}
+#libraries####
 library(tidyverse)
 library(DT)
 library(lubridate)
 
-#meta-data
+#meta-data####
 meta <- read_csv("data/meta-data.csv")
 datatable(meta)
 
-#data
+#data####
 data.2015 <- read_csv("data/MNP.2015.csv")
 data.2016 <- read_csv("data/MNP.2016.csv")
 
 #merge
 data <- rbind.data.frame(data.2015, data.2016)
-data <- data %>% rename(net.treatment = treatment) %>% na.omit(data) 
+
+#code treatment properly
+data <- data %>% rename(net.treatment = treatment) #%>% na.omit(data) 
+
+#keep key columns and minimize working dataframe
+data <- data %>% select(-name, -plant, -start, -stop, -ID, -recorder)
+
+#set year and rep as characters
 data$year <- as.character(data$year)
 data$rep <- as.character(data$rep)
 
-#tidy data to expand treatment column (current structure is a mix of three factors)
-#microsite
-data <- data %>% mutate(microsite = ifelse(net.treatment %in% c("SA", "SAA", "SX"), "Larrea", ifelse(net.treatment %in% c("OA"), "open", ifelse(net.treatment %in% c("AMB"), "Ambrosia", NA))))
-length(unique(data$microsite))
-
-#annuals present
-data <- data %>% mutate(annuals = ifelse(net.treatment %in% c("SA", "SAA"), "annuals", ifelse(net.treatment %in% c("OA"), "annuals", ifelse(net.treatment %in% c("AMB"), "annuals", "none"))))
-length(unique(data$annuals))
-
-#target flowers
-data <- data %>% mutate(target.flowers = ifelse(net.treatment %in% c("SA", "SX"), "shrub flowers", ifelse(net.treatment %in% c("AMB", "SAA", "OA"), "annual plant flowers", "NA")))
-length(unique(data$annuals))
+#convert times to total seconds then to hour
+data$total.duration <- (as.numeric(data$total.duration))/3600
+data$visitation.duration <- (as.numeric(data$visitation.duration))/3600
 
 #recode net.treatment column
 data <- data %>% mutate(net.treatment = ifelse(net.treatment %in% c("SA"), "Larrea flowers with annuals", ifelse(net.treatment %in% c("SX"), "Larrea flowers without annuals", ifelse(net.treatment %in% c("SAA"), "Annual flowers under Larrea",ifelse(net.treatment %in% c("OA"), "Annual flowers in open",ifelse(net.treatment %in% c("AMB"), "Annual flowers under Ambrosia","NA"))))))
 
-#frequency counts in a separate dataframe (weighted by duration of recording)
-frequency <- data %>% group_by(year, day, net.treatment, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), summed.visitation.duration = sum(visitation.duration), mean.floral.density = mean(floral.density), mean.insect.RTU = n_distinct(insect.RTU), count = n())
+#frequency wrangled by RTU####
+frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>% 
+  summarise(net.time = sum(total.duration), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
 
-frequency$net.time <- as.numeric(frequency$net.time) #converts to total seconds
-frequency$mean.visitation.duration <- as.numeric(frequency$mean.visitation.duration) #converts to total seconds
-frequency$summed.visitation.duration <- as.numeric(frequency$summed.visitation.duration) #converts to total seconds
-frequency$count <- as.numeric(frequency$count)
+#richness in RTU
+richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = sum(insect.richness))
 
-frequency$rate <- as.numeric(frequency$count)/frequency$net.time #weight by net time
-frequency$proportion.visitations <- frequency$mean.visitation.duration/frequency$net.time
-frequency$rate.per.flower <- frequency$count/frequency$mean.floral.density
+#rates needed
+frequency <- frequency %>% mutate(rate.per.flower = (count/net.floral.density)*100) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time)
+
+#view data
 datatable(frequency)
 
-frequency$visitations.hr <- frequency$proportion.visitations*60
-frequency$rate.per.flower.hr <- frequency$rate.per.flower*60
 
-#FILTER OUT ANNUALS VERSUS SHRUB FLOWERS
-#frequency.annuals <- frequency %>% filter(target.flowers == "annual plant flowers")
-#frequency.shrubs <- frequency %>% filter(target.flowers == "shrub flowers")
-
-#repeat above with RTU as factor
-frequency.by.RTU <- data %>% group_by(year, day, net.treatment, insect.RTU, rep, microsite, annuals, target.flowers) %>% summarise(net.time = sum(total.duration), mean.visitation.duration = mean(visitation.duration), summed.visitation.duration = sum(visitation.duration), mean.floral.density = mean(floral.density), count = n())
-
-frequency.by.RTU$net.time <- as.numeric(frequency.by.RTU$net.time) #converts to total seconds
-frequency.by.RTU$mean.visitation.duration <- as.numeric(frequency.by.RTU$mean.visitation.duration) #converts to total seconds
-frequency.by.RTU$summed.visitation.duration <- as.numeric(frequency.by.RTU$summed.visitation.duration)
-frequency.by.RTU$count <- as.numeric(frequency.by.RTU$count)
-
-frequency.by.RTU$rate <- as.numeric(frequency.by.RTU$count)/frequency.by.RTU$net.time #weight by net time
-frequency.by.RTU$proportion.visitations <- frequency.by.RTU$mean.visitation.duration/frequency.by.RTU$net.time
-frequency.by.RTU$rate.per.flower <- frequency.by.RTU$count/frequency.by.RTU$mean.floral.density
-datatable(frequency.by.RTU)
-
-frequency.by.RTU$visitations.hr <- frequency.by.RTU$proportion.visitations*60
-frequency.by.RTU$rate.per.flower.hr <- frequency.by.RTU$rate.per.flower*60
-
-
-#split out by year because of non-orthogonality
-freq.2015 <- frequency %>% filter(year == 2015)
-freq.2016 <- frequency %>% filter(year == 2016)
 
 ```
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
-#Higher-order treatment patterns in frequency####
-#Collapsed single factor model
-#ggplot(frequency, aes(net.treatment, rate.per.flower)) + geom_boxplot() + ylab("rate per flower per unit time") + facet_wrap(~year) + coord_flip()
+ggplot(frequency, aes(net.treatment, rate.per.flower, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
-ggplot(frequency, aes(net.treatment, rate.per.flower.hr)) + geom_boxplot() + ylab("rate per flower per hour") + facet_wrap(~year) + coord_flip()
+ggplot(frequency, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("net visitations") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
-#ggplot(frequency, aes(net.treatment, rate.per.flower, fill = year)) + geom_bar(stat= "identity") + ylab("rate per flower per unit time") + scale_fill_brewer(palette = "YlGn") + coord_flip()
-
-ggplot(frequency, aes(net.treatment, visitations.hr)) + geom_boxplot() + ylab("mean visit duration (min) per hour recorded") + facet_wrap(~year) + coord_flip()
-
-#ok, only spend 1 min per hr?
-
-ggplot(frequency, aes(net.treatment, mean.insect.RTU)) + geom_boxplot() + ylab("mean RTU richness") + facet_wrap(~year) + coord_flip()
-
-#net treatment per RTU
-ggplot(frequency.by.RTU, aes(net.treatment, rate.per.flower.hr)) + geom_boxplot() + ylab("rate per flower per hour") + facet_wrap(~year*insect.RTU) + coord_flip()
-
-ggplot(frequency.by.RTU, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") +
+ggplot(richness, aes(net.treatment, insect.richness)) +geom_bar(fill = "Light Blue", stat="identity") +
   facet_wrap(~year) + coord_flip()
-
-ggplot(frequency.by.RTU, aes(net.treatment, visitations.hr)) + geom_boxplot() + ylab("rate per flower per hour") + facet_wrap(~year*insect.RTU) + coord_flip()
-
-ggplot(frequency.by.RTU, aes(net.treatment, visitations.hr, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") +
-  facet_wrap(~year) + coord_flip()
-
-
-
-#relationships with sampling effort
-ggplot(frequency, aes(net.time, count, color = year)) + geom_point()
-
-ggplot(frequency, aes(net.time, count, color = year)) + geom_point() + facet_wrap(~microsite)
-
-#floral density
-ggplot(frequency, aes(mean.floral.density, rate, color = microsite)) + geom_point() + facet_wrap(~year)
-
-ggplot(frequency, aes(mean.floral.density, proportion.visitations, color = microsite)) + geom_point() + facet_wrap(~year)
-
-#relationships with sampling effort
-ggplot(frequency, aes(net.time, rate, color = year)) + geom_point() + facet_wrap(~microsite*target.flowers)
-
-ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite*target.flowers)
 
 ```
 
 ###Models
 ```{r models, warning=FALSE, message=FALSE}
-#GLM for count and weight by net.time (alt - use MASS and glm.nb)
-#library(MASS) #need for glm.nb
+#Both years
+m1 <- glm(rate.per.flower~net.treatment*insect.RTU/rep + year, family = "poisson", data = frequency)
+anova(m1, test = "Chisq")
+#plot(m)
 
-#all codes aggregated
-#do both years at once with net treatments
+m2 <- glm(rate.per.flower~net.treatment*insect.RTU + year, family = "poisson", data = frequency)
+anova(m2, test = "Chisq")
 
-
-#2015 counts
-m <- glm(count~net.treatment + mean.floral.density, family = "poisson", weight = net.time, data = freq.2015)
-anova(m, test = "Chisq") 
-
-#posthoc test
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-#2016 counts
-m <- glm(count~net.treatment + mean.floral.density, family = "poisson", weight = net.time, data = freq.2016)
-anova(m, test = "Chisq") 
+AIC(m1,m2)#lower scores are a better fit
 
 #posthoc test
 require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m2, pairwise~net.treatment, adjust="tukey")
 
-#repeat above for mean.visitation.duration
-#2015
-m <- glm(mean.visitation.duration~net.treatment + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2015)
-anova(m, test = "Chisq") 
+#alt is to use lmer for random effects such as year and nested effects too
+#require(lmerTest)
 
-#posthoc test
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
-#2016
-m <- glm(mean.visitation.duration~net.treatment + mean.floral.density, family = "gaussian", weight = net.time, data = freq.2016)
-anova(m, test = "Chisq") 
-
-#posthoc test
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-#2015 visitation rates 
-#suggestion here to use offset instead ratios http://stats.stackexchange.com/questions/164889/how-to-deal-with-non-integer-warning-from-negative-binomial-glm
-m <- glm(rate~net.treatment + mean.floral.density, family = "poisson", data = freq.2015)
-anova(m, test = "Chisq") 
-
-#posthoc test
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-#2016 visitation rates 
-m <- glm(rate~net.treatment + mean.floral.density, family = "poisson", data = freq.2016)
-anova(m, test = "Chisq") 
-
-#posthoc test
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
 ```
 
 ###Interpretation
-**Net.treatment models**  
-1. Using the simplest models with all treatment levels aggregated but split by years, larrea is the most important magnet for frequency of visits (weighting for net.time recorded and using floral density as a covariate). This is a reasonable test because it captures enough of the variation and address non-orthogonality levels.\
-
-2. Mean visitation rate in 2015 significantly differed between larea with flowers and open and larea with flowers and annuals versus larrea without. This strongly suggests a double-magnet effect this season. In 2016, larrea flowering with annuals was also significantly greater than open microsites with annuals.
-
-3. Double-magnet supported for frequency too.
-
-4. Then check each prediction. Need to think over how to handle double-magnet H.
-
-
-
-
