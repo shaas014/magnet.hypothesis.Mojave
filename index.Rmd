@@ -69,7 +69,7 @@ frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>%
   summarise(net.time = sum(total.duration), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
 
 #richness in RTU
-richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = sum(insect.richness))
+richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = mean(insect.richness))
 
 #rates needed
 frequency <- frequency %>% mutate(rate.per.flower = (count/net.floral.density)*100) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time)
@@ -77,41 +77,40 @@ frequency <- frequency %>% mutate(rate.per.flower = (count/net.floral.density)*1
 #view data
 datatable(frequency)
 
-
-
+freq.2015 <- frequency %>% filter(year == 2015)
+freq.2016 <- frequency %>% filter(year == 2016)
 ```
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
-ggplot(frequency, aes(net.treatment, rate.per.flower, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+ggplot(frequency, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
-ggplot(frequency, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("net visitations") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+ggplot(frequency, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("net duration of visits") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
-ggplot(richness, aes(net.treatment, insect.richness)) +geom_bar(fill = "Light Blue", stat="identity") +
-  facet_wrap(~year) + coord_flip()
+#ggplot(richness, aes(net.treatment, insect.richness)) +geom_bar(fill = "Light Blue", stat="identity") + facet_wrap(~year) + coord_flip()
 
 ```
 
 ###Models
 ```{r models, warning=FALSE, message=FALSE}
-#Both years
-m1 <- glm(rate.per.flower~net.treatment*insect.RTU/rep + year, family = "poisson", data = frequency)
+#visitations
+m1 <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2015)
 anova(m1, test = "Chisq")
-#plot(m)
-
-m2 <- glm(rate.per.flower~net.treatment*insect.RTU + year, family = "poisson", data = frequency)
-anova(m2, test = "Chisq")
-
-AIC(m1,m2)#lower scores are a better fit
-
-#posthoc test
 require(lsmeans)
+lsmeans(m1, pairwise~net.treatment, adjust="tukey")
+
+m2 <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2016)
+anova(m2, test = "Chisq")
 lsmeans(m2, pairwise~net.treatment, adjust="tukey")
 
-#alt is to use lmer for random effects such as year and nested effects too
-#require(lmerTest)
+#duration of visits
+m1 <- glm(net.visitation~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2015)
+anova(m1, test = "Chisq")
+lsmeans(m1, pairwise~net.treatment, adjust="tukey")
 
-
+m2 <- glm(net.visitation~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2016)
+anova(m2, test = "Chisq")
+lsmeans(m2, pairwise~net.treatment, adjust="tukey")
 
 ```
 
