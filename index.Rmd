@@ -75,12 +75,15 @@ frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>%
 #rates needed
 frequency <- frequency %>% mutate(rate.per.flower = (count/mean.floral.density)) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time)
 
-#view data
+#exclude none and outliers
+freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2)
+
+#view frequency data
 datatable(frequency)
 
+#separate by year for stats
 freq.2015 <- frequency %>% filter(year == 2015)
 freq.2016 <- frequency %>% filter(year == 2016)
-freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2)
 ```
 
 ### Data visualization
@@ -103,23 +106,32 @@ ggplot(freq.rtu, aes(mean.temp, net.visitation, color = insect.RTU)) + geom_poin
 ###Models
 ```{r models, warning=FALSE, message=FALSE}
 #visitations
-m1 <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
-anova(m1, test = "Chisq")
+m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
+anova(m, test = "Chisq")
 require(lsmeans)
-lsmeans(m1, pairwise~net.treatment, adjust="tukey")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
-m2 <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2016)
-anova(m2, test = "Chisq")
-lsmeans(m2, pairwise~net.treatment, adjust="tukey")
+m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
 #duration of visits
-m1 <- glm(net.visitation~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
-anova(m1, test = "Chisq")
-lsmeans(m1, pairwise~net.treatment, adjust="tukey")
+m <- glm(net.visitation~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
-m2 <- glm(net.visitation~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2016)
-anova(m2, test = "Chisq")
-lsmeans(m2, pairwise~net.treatment, adjust="tukey")
+m <- glm(net.visitation~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m, pairwise~insect.RTU %in% rep, adjust="tukey")
 
 ```
 
