@@ -30,7 +30,7 @@ An interesting corollary is that there are appropriate floral resources for dese
 ![](./map.jpg)
 
 ###Data wrangling
-```{r library and data loads, warning=FALSE, message=FALSE, echo=FALSE}
+```{r library and data loads, warning=FALSE, message=FALSE}
 #libraries####
 library(tidyverse)
 library(DT)
@@ -85,6 +85,8 @@ freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flowe
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
+ggplot(freq.rtu, aes(net.treatment, count, fill = insect.RTU)) + geom_boxplot() + ylab("count") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
 ggplot(freq.rtu, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 ggplot(freq.rtu, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
