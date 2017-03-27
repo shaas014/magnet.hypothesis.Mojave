@@ -76,7 +76,7 @@ frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>%
 frequency <- frequency %>% mutate(rate.per.flower = (count/mean.floral.density)) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time) %>% mutate(rate.per.flower.mean.time = rate.per.flower/mean.time)
 
 #exclude none and outliers
-freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2) %>% filter(rate.per.flower.mean.time < 2)
+freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <1) %>% filter(rate.per.flower.mean.time < 2)
 frequency <- frequency %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2)
 
 #view frequency data
@@ -98,7 +98,7 @@ ggplot(freq.rtu, aes(net.treatment, rate.per.flower.mean.time, fill = insect.RTU
 
 #visitation durations####
 #net visitation time
-ggplot(freq.rtu, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+ggplot(freq.rtu, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits (proportion of hour)") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 #temperature####
 ggplot(freq.rtu, aes(mean.temp, rate.per.flower, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year)
