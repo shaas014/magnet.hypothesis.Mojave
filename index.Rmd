@@ -66,10 +66,10 @@ data <- data %>% mutate(net.treatment = ifelse(net.treatment %in% c("SA"), "Larr
 
 #frequency wrangled by RTU####
 frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>% 
-  summarise(net.time = sum(total.duration), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
+  summarise(net.time = sum(total.duration), mean.temp = mean(temperature), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
 
 #richness in RTU
-richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = mean(insect.richness))
+#richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = mean(insect.richness))
 
 #rates needed
 frequency <- frequency %>% mutate(rate.per.flower = (count/net.floral.density)*100) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time)
@@ -87,6 +87,10 @@ ggplot(frequency, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + g
 
 ggplot(frequency, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("net duration of visits") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
+ggplot(frequency, aes(mean.temp, rate.per.flower.hr, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
+
+ggplot(frequency, aes(mean.temp, net.visitation, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
+
 #ggplot(richness, aes(net.treatment, insect.richness)) +geom_bar(fill = "Light Blue", stat="identity") + facet_wrap(~year) + coord_flip()
 
 ```
@@ -94,17 +98,17 @@ ggplot(frequency, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_
 ###Models
 ```{r models, warning=FALSE, message=FALSE}
 #visitations
-m1 <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2015)
+m1 <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
 anova(m1, test = "Chisq")
 require(lsmeans)
 lsmeans(m1, pairwise~net.treatment, adjust="tukey")
 
-m2 <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2016)
+m2 <- glm(rate.per.flower.hr~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2016)
 anova(m2, test = "Chisq")
 lsmeans(m2, pairwise~net.treatment, adjust="tukey")
 
 #duration of visits
-m1 <- glm(net.visitation~net.treatment + insect.RTU %in% rep, family = "poisson", data = freq.2015)
+m1 <- glm(net.visitation~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
 anova(m1, test = "Chisq")
 lsmeans(m1, pairwise~net.treatment, adjust="tukey")
 
