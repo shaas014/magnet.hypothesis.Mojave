@@ -166,6 +166,10 @@ ggplot(frequency, aes(mean.temp, net.visitation, color = insect.RTU)) + geom_poi
 
 #ggplot(richness, aes(net.treatment, insect.richness)) +geom_bar(fill = "Light Blue", stat="identity") + facet_wrap(~year) + coord_flip()
 
+
+#denominator is net.time of recordings across all reps
+#ggplot(freq.rtu, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
 ```
 
 ###EDA
