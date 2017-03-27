@@ -80,7 +80,7 @@ datatable(frequency)
 
 freq.2015 <- frequency %>% filter(year == 2015)
 freq.2016 <- frequency %>% filter(year == 2016)
-freq.rtu <- frequency %>% filter(insect.RTU != "none")
+freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <40) %>% filter(net.visitation <2)
 ```
 
 ### Data visualization
