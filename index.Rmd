@@ -90,14 +90,22 @@ freq.2016 <- frequency %>% filter(year == 2016)
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
 #visitations####
-#ggplot(freq.rtu, aes(net.treatment, count, fill = insect.RTU)) + geom_boxplot() + ylab("count") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+ggplot(freq.rtu, aes(net.treatment, count)) + geom_boxplot() + ylab("count") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
+ggplot(freq.rtu, aes(net.treatment, count, fill = insect.RTU)) + geom_boxplot() + ylab("count") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
+ggplot(freq.rtu, aes(net.treatment, rate.per.flower)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 ggplot(freq.rtu, aes(net.treatment, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
+ggplot(freq.rtu, aes(net.treatment, rate.per.flower.mean.time)) + geom_boxplot() + ylab("rate per flower per mean hour recorded time") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 ggplot(freq.rtu, aes(net.treatment, rate.per.flower.mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per mean hour recorded time") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 #visitation durations####
 #net visitation time
+ggplot(freq.rtu, aes(net.treatment, net.visitation)) + geom_boxplot() + ylab("net duration of visits (proportion of hour)") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
 ggplot(freq.rtu, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits (proportion of hour)") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 #temperature####
@@ -117,37 +125,83 @@ ggplot(freq.rtu, aes(mean.floral.density, net.visitation, color = insect.RTU)) +
 
 ```
 
+###EDA
+```{r EDA, warning=FALSE, message=FALSE}
+summary(frequency)
+#distributions
+require(fitdistrplus)
+descdist(frequency$rate.per.flower, boot = 1000)
+descdist(frequency$rate.per.flower.mean.time, boot = 1000)
+descdist(frequency$net.visitation, boot = 1000)
+
+#plots
+plotdist(frequency$rate.per.flower)
+plotdist(frequency$rate.per.flower.mean.time)
+plotdist(frequency$net.visitation)
+
+#fitting
+a <- frequency$rate.per.flower
+fitg <- fitdist(a, "gamma")
+fitw <- fitdist(a, "weibull")
+fitn <- fitdist(a, "norm")
+fitl <- fitdist(a, "lnorm")
+gofstat(list(fitg, fitw, fitn, fitl), fitnames = c("gamma", "weibull", "normal", "lognormal"))
+
+a <- frequency$rate.per.flower.mean.time
+fitg <- fitdist(a, "gamma")
+fitw <- fitdist(a, "weibull")
+fitn <- fitdist(a, "norm")
+fitl <- fitdist(a, "lnorm")
+gofstat(list(fitg, fitw, fitn, fitl), fitnames = c("gamma", "weibull", "normal", "lognormal"))
+
+a <- frequency$net.visitation
+fitn <- fitdist(a, "norm")
+gofstat(fitn)  
+detach("package:fitdistrplus", unload = TRUE)
+#summary: gamma, gamma, normal have lowers AIC scores
+
+```
+
+
 ###Models
 ```{r models, warning=FALSE, message=FALSE}
 #Simple models####
 #visitations
-m <- glm(rate.per.flower~net.treatment*insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
+m <- glm(rate.per.flower~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
 anova(m, test = "Chisq")
+
 require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
-m <- glm(rate.per.flower~net.treatment*insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2016)
+m <- glm(rate.per.flower~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
 anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+lsmeans(m, pairwise~insect.RTU, adjust="tukey")
 
-m <- glm(rate.per.flower.mean.time~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
+m <- glm(rate.per.flower.mean.time~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
 anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
-m <- glm(rate.per.flower.mean.time~net.treatment*insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2016)
+m <- glm(rate.per.flower.mean.time~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
 anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+
 
 #duration of visits
-m <- glm(net.visitation~net.treatment*insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
+m <- glm(net.visitation~net.treatment:insect.RTU %in% rep + mean.temp, family = "gaussian", data = freq.2015)
 anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
-m <- glm(net.visitation~net.treatment*insect.RTU %in% rep, family = "poisson", data = freq.2016)
+m <- glm(net.visitation~net.treatment:insect.RTU %in% rep, family = "gaussian", data = freq.2016)
 anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-lsmeans(m, pairwise~insect.RTU %in% rep, adjust="tukey")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 ```
+
+###Model assumptions  
+1. It is acceptable to aggregate all treatments into one vector.  
+2. The best fit model included interaction terms (not additive) and nests insect.RTU within reps.
+3. The data are poisson for count and frequency.  
+4. It is acceptable to treat each year separately and not in a single model.
 
 ###Interpretation
