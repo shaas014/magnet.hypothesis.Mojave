@@ -67,16 +67,17 @@ data <- data %>% mutate(net.treatment = ifelse(net.treatment %in% c("SA"), "Larr
 
 #frequency wrangled by RTU####
 frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>% 
-  summarise(net.time = sum(total.duration), mean.temp = mean(temperature), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
+  summarise(net.time = sum(total.duration), mean.time = mean(total.duration), mean.temp = mean(temperature), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
 
 #richness in RTU
-#richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = mean(insect.richness))
+#richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = mean(insect.richness)) #did not work correctly. need to wrangle data differently
 
 #rates needed
-frequency <- frequency %>% mutate(rate.per.flower = (count/mean.floral.density)) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time)
+frequency <- frequency %>% mutate(rate.per.flower = (count/mean.floral.density)) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time) %>% mutate(rate.per.flower.mean.time = rate.per.flower/mean.time)
 
 #exclude none and outliers
 freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2)
+frequency <- frequency %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2)
 
 #view frequency data
 datatable(frequency)
@@ -88,12 +89,18 @@ freq.2016 <- frequency %>% filter(year == 2016)
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
+#visitations
 ggplot(freq.rtu, aes(net.treatment, count, fill = insect.RTU)) + geom_boxplot() + ylab("count") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 ggplot(freq.rtu, aes(net.treatment, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
+#denominator is net.time of recordings across all reps
 ggplot(freq.rtu, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
+#denominator is mean.time of recordings across all reps
+ggplot(freq.rtu, aes(net.treatment, rate.per.flower.mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per mean hour recorded time") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
+#net visitation time
 ggplot(freq.rtu, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 ggplot(freq.rtu, aes(mean.temp, rate.per.flower.hr, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
@@ -105,11 +112,19 @@ ggplot(freq.rtu, aes(mean.temp, net.visitation, color = insect.RTU)) + geom_poin
 
 ###Models
 ```{r models, warning=FALSE, message=FALSE}
+#Simple models####
 #visitations
-m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
-anova(m, test = "Chisq")
+m1 <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
+anova(m1, test = "Chisq")
 require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m1, pairwise~net.treatment, adjust="tukey")
+
+m2 <- glm(rate.per.flower~net.treatment*insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2015)
+anova(m2, test = "Chisq")
+lsmeans(m2, pairwise~net.treatment, adjust="tukey")
+
+AIC(m1,m2)
+
 
 m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "poisson", data = freq.2016)
 anova(m, test = "Chisq")
