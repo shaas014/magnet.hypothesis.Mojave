@@ -77,7 +77,10 @@ frequency <- frequency %>% mutate(rate.per.flower = (count/mean.floral.density))
 
 #exclude none and outliers
 freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <1) %>% filter(rate.per.flower.mean.time < 2)
+
 frequency <- frequency %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2)
+
+frequency <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <1) %>% filter(rate.per.flower.mean.time < 2)
 
 #view frequency data
 datatable(frequency)
@@ -176,7 +179,6 @@ lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 m <- glm(rate.per.flower~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
 anova(m, test = "Chisq")
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-lsmeans(m, pairwise~insect.RTU, adjust="tukey")
 
 m <- glm(rate.per.flower.mean.time~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
 anova(m, test = "Chisq")
