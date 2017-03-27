@@ -155,6 +155,17 @@ ggplot(frequency, aes(net.time, rate, color = year)) + geom_point() + facet_wrap
 
 ggplot(frequency, aes(net.time, mean.visitation.duration, color = year)) + geom_point() + facet_wrap(~microsite*target.flowers)
 
+#super simple
+ggplot(frequency, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
+ggplot(frequency, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("net duration of visits") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
+ggplot(frequency, aes(mean.temp, rate.per.flower.hr, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
+
+ggplot(frequency, aes(mean.temp, net.visitation, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
+
+#ggplot(richness, aes(net.treatment, insect.richness)) +geom_bar(fill = "Light Blue", stat="identity") + facet_wrap(~year) + coord_flip()
+
 ```
 
 ###EDA

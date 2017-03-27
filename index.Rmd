@@ -39,6 +39,7 @@ library(lubridate)
 #meta-data####
 meta <- read_csv("data/meta-data.csv")
 datatable(meta)
+#error is SD
 
 #data####
 data.2015 <- read_csv("data/MNP.2015.csv")
@@ -79,19 +80,19 @@ datatable(frequency)
 
 freq.2015 <- frequency %>% filter(year == 2015)
 freq.2016 <- frequency %>% filter(year == 2016)
+freq.rtu <- frequency %>% filter(insect.RTU != "none")
 ```
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
-ggplot(frequency, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+ggplot(freq.rtu, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
-ggplot(frequency, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("net duration of visits") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+ggplot(freq.rtu, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
-ggplot(frequency, aes(mean.temp, rate.per.flower.hr, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
+ggplot(freq.rtu, aes(mean.temp, rate.per.flower.hr, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
 
-ggplot(frequency, aes(mean.temp, net.visitation, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
+ggplot(freq.rtu, aes(mean.temp, net.visitation, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + facet_wrap(~year)
 
-#ggplot(richness, aes(net.treatment, insect.richness)) +geom_bar(fill = "Light Blue", stat="identity") + facet_wrap(~year) + coord_flip()
 
 ```
 
