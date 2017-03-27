@@ -73,19 +73,21 @@ frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>%
 #richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = mean(insect.richness))
 
 #rates needed
-frequency <- frequency %>% mutate(rate.per.flower = (count/net.floral.density)*100) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time)
+frequency <- frequency %>% mutate(rate.per.flower = (count/mean.floral.density)) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time)
 
 #view data
 datatable(frequency)
 
 freq.2015 <- frequency %>% filter(year == 2015)
 freq.2016 <- frequency %>% filter(year == 2016)
-freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <40) %>% filter(net.visitation <2)
+freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2)
 ```
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
 ggplot(freq.rtu, aes(net.treatment, count, fill = insect.RTU)) + geom_boxplot() + ylab("count") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+
+ggplot(freq.rtu, aes(net.treatment, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
 ggplot(freq.rtu, aes(net.treatment, rate.per.flower.hr, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per hour") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
 
