@@ -402,6 +402,7 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 ###Supporting analyses
 ```{r supporting, warning=FALSE, message=FALSE}
 #test multiple vector data structure####
+#RTU was not a factor in model, treat as response instead, i.e. number of different taxa as a richness response variable.  Also, include bees as a response. 
 
 #test Rii####
 
