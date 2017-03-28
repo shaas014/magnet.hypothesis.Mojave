@@ -67,7 +67,7 @@ data <- data %>% mutate(net.treatment = ifelse(net.treatment %in% c("SA"), "Larr
 
 #frequency wrangled by RTU####
 frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>% 
-  summarise(net.time = sum(total.duration), mean.time = mean(total.duration), mean.temp = mean(temperature), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
+  summarise(net.time = sum(total.duration), mean.time = mean(total.duration), mean.temp = mean(temperature), mean.var.temp = mean(error), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
 
 #richness in RTU
 #richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = mean(insect.richness)) #did not work correctly. need to wrangle data differently
@@ -297,6 +297,24 @@ anova(m, test = "Chisq")
 lsmeans(m, pairwise~net.treatment, adjust="tukey")
 ```
 
+###Models: covariates
+```{r models for covariates, warning=FALSE, message=FALSE}
+#Temp####
+#Main models capture global effects for temp so need post hoc regressions
+#mean temp
+
+#error temp
+
+#CV temp
+
+#Check if cooler under shrubs
+
+
+#Floral density####
+#not captured in global models so need to do here on count and visitation durations
+
+```
+
 ###Model: single-magnet hypothesis bees
 ```{r model single magnet bees, warning=FALSE, message=FALSE}
 #Single-magnet hypothesis for bees (drop Larrea flowers)####
@@ -365,9 +383,12 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
 ###Modeling assumptions  
 1. It is acceptable to aggregate all treatments into one vector.  
-2. The best fit model included interaction terms (not additive) and nests insect.RTU within reps. However, contrasts of AIC scores suggest additive model best fit and given data viz and non-orthogonality issues, a compelling argument can be made for additive.
-3. It is acceptable to treat each year separately and not in a single model.
+2. The best fit model included interaction terms (not additive) and nests insect.RTU within reps. However, contrasts of AIC scores suggest that the additive model was best fit and given data viz and non-orthogonality issues, a compelling argument can be made for an additive global model.
+3. It is acceptable to treat each year separately and not in a single model (no Ambrosia in 2015 and different years).
 4. It is acceptable to model only bee data because of data viz.
+5. The appropriate model is a GLM with fixed effects. This assumes rep is fixed and not random effect in single-year models. A multi-year model would be modeled using glmer or glmer.nb because year would be treated as random.
+6. Gamma is the most likely family in several instances. Tests with weibull and others did not change outcome.
+7. The function lsmeans is the most appropriate for posthoc contrasts (main model has a nested effect). This is not always ideal. The function glht etc from multcomp package was also tested and performed similarly. The function lsmeansLT from lmerTest package if there is a random effect in model (and mixed) was similar and difflsmeans as well. The final option is to do a likelihood ratio post hoc tests with a chi-sq approximation (following main glmer fit). This involves fitting model then repeating with a null, intercept-only model and comparing the two fits.
 
 ###Interpretation  
 1. Cannot ignore taxa specificity. Data viz clearly shows that bees were the only taxa to respond to treatments (and that by plotting without taxa this is lost).  
@@ -382,7 +403,8 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 ```{r supporting, warning=FALSE, message=FALSE}
 #test multiple vector data structure####
 
-#test variation in temp
+#test Rii####
+
 
 
 ```
