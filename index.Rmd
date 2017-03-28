@@ -88,6 +88,19 @@ datatable(frequency)
 #separate by year for stats
 freq.2015 <- frequency %>% filter(year == 2015)
 freq.2016 <- frequency %>% filter(year == 2016)
+
+#bees only
+bees.2015 <- freq.2015  %>% filter(insect.RTU == "bees")
+bees.2016 <- freq.2016  %>% filter(insect.RTU == "bees")
+
+#Single-magnet hypothesis data with bees
+magnet.bees.2015 <- bees.2015  %>% filter(net.treatment == "Annual flowers under Larrea" | net.treatment == "Annual flowers in open" | net.treatment == "Annual flowers under Ambrosia")
+magnet.bees.2016 <- bees.2016  %>% filter(net.treatment == "Annual flowers under Larrea" | net.treatment == "Annual flowers in open" | net.treatment == "Annual flowers under Ambrosia")
+
+#Double-magnet hypothesis data with bees
+double.bees.2015 <- bees.2015  %>% filter(net.treatment == "Larrea flowers with annuals" | net.treatment == "Larrea flowers without annuals")
+double.bees.2016 <- bees.2016  %>% filter(net.treatment == "Larrea flowers with annuals" | net.treatment == "Larrea flowers without annuals")
+
 ```
 
 ### Data visualization
@@ -124,7 +137,6 @@ ggplot(freq.rtu, aes(mean.floral.density, rate.per.flower, color = insect.RTU)) 
 ggplot(freq.rtu, aes(mean.floral.density, rate.per.flower.mean.time, color = insect.RTU)) + geom_point() + ylab("rate per flower per mean hour recorded time") + geom_smooth(method = "lm") + facet_wrap(~year)
 
 ggplot(freq.rtu, aes(mean.floral.density, net.visitation, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + geom_smooth(method = "lm") + facet_wrap(~year)
-
 
 ```
 
@@ -166,9 +178,9 @@ detach("package:fitdistrplus", unload = TRUE)
 ```
 
 
-###Models
-```{r models, warning=FALSE, message=FALSE}
-#Simple models####
+###Model: all with interaction terms
+```{r model all with interactions, warning=FALSE, message=FALSE}
+#Interaction-term models for all insect taxa####
 #visitations
 m <- glm(rate.per.flower~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
 anova(m, test = "Chisq")
@@ -188,7 +200,6 @@ m <- glm(rate.per.flower.mean.time~net.treatment:insect.RTU %in% rep + mean.temp
 anova(m, test = "Chisq")
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
-
 #duration of visits
 m <- glm(net.visitation~net.treatment:insect.RTU %in% rep + mean.temp, family = "gaussian", data = freq.2015)
 anova(m, test = "Chisq")
@@ -200,10 +211,155 @@ lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 ```
 
-###Model assumptions  
-1. It is acceptable to aggregate all treatments into one vector.  
-2. The best fit model included interaction terms (not additive) and nests insect.RTU within reps.
-3. The data are poisson for count and frequency.  
-4. It is acceptable to treat each year separately and not in a single model.
+###Model: all with additive terms
+```{r model all with additive terms, warning=FALSE, message=FALSE}
+#Additive-term models for all insect taxa####
+#visitations
+m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
+anova(m, test = "Chisq")
 
-###Interpretation
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+
+m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+
+m <- glm(rate.per.flower.mean.time~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+
+m <- glm(rate.per.flower.mean.time~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+
+#duration of visits
+m <- glm(net.visitation~net.treatment + insect.RTU %in% rep + mean.temp, family = "gaussian", data = freq.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+
+m <- glm(net.visitation~net.treatment + insect.RTU %in% rep, family = "gaussian", data = freq.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+```
+
+###Model: bees only
+```{r model bees only, warning=FALSE, message=FALSE}
+#Bees####
+#visitations
+m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = bees.2015)
+anova(m, test = "Chisq")
+
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = bees.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+#duration of visits
+m <- glm(net.visitation~net.treatment + mean.temp, family = "gaussian", data = bees.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(net.visitation~net.treatment, family = "gaussian", data = bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+```
+
+###Model: single-magnet hypothesis bees
+```{r model single magnet bees, warning=FALSE, message=FALSE}
+#Single-magnet hypothesis for bees (drop Larrea flowers)####
+#visitations
+m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = magnet.bees.2015)
+anova(m, test = "Chisq")
+
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = magnet.bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = magnet.bees.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = magnet.bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+#duration of visits
+m <- glm(net.visitation~net.treatment + mean.temp, family = "gaussian", data = magnet.bees.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(net.visitation~net.treatment, family = "gaussian", data = magnet.bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+```
+
+###Model: double-magnet hypothesis bees
+```{r model double magnet bees, warning=FALSE, message=FALSE}
+#Single-magnet hypothesis for bees (drop Larrea flowers)####
+#visitations
+m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = double.bees.2015)
+anova(m, test = "Chisq")
+
+require(lsmeans)
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = double.bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = double.bees.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = double.bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+#duration of visits
+m <- glm(net.visitation~net.treatment + mean.temp, family = "gaussian", data = double.bees.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+m <- glm(net.visitation~net.treatment, family = "gaussian", data = double.bees.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment, adjust="tukey")
+
+```
+
+###Modeling assumptions  
+1. It is acceptable to aggregate all treatments into one vector.  
+2. The best fit model included interaction terms (not additive) and nests insect.RTU within reps. However, contrasts of AIC scores suggest additive model best fit and given data viz and non-orthogonality issues, a compelling argument can be made for additive.
+3. It is acceptable to treat each year separately and not in a single model.
+4. It is acceptable to model only bee data because of data viz.
+
+###Interpretation  
+1. Cannot ignore taxa specificity. Data viz clearly shows that bees were the only taxa to respond to treatments (and that by plotting without taxa this is lost).  
+2. Larrea flowers are not as attractive to bees as annuals within this ecosystem.  
+3. Bees repond to temp.
+4. There is support for the single-magnet hypothesis.  
+5. There is no support for the double-magnet prediction.  
+
+###Supporting analyses
+```{r supporting, warning=FALSE, message=FALSE}
+#test multiple vector data structure####
+
+#test variation in temp
+
+
+```
+
