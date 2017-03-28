@@ -90,6 +90,7 @@ freq.2015 <- frequency %>% filter(year == 2015)
 freq.2016 <- frequency %>% filter(year == 2016)
 
 #bees only
+bees <- frequency %>% filter(insect.RTU == "bees")
 bees.2015 <- freq.2015  %>% filter(insect.RTU == "bees")
 bees.2016 <- freq.2016  %>% filter(insect.RTU == "bees")
 
@@ -184,29 +185,34 @@ detach("package:fitdistrplus", unload = TRUE)
 #visitations
 m <- glm(rate.per.flower~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
 anova(m, test = "Chisq")
-
+a1 <- AIC(m)
 require(lsmeans)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 m <- glm(rate.per.flower~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
 anova(m, test = "Chisq")
+a2 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 m <- glm(rate.per.flower.mean.time~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
 anova(m, test = "Chisq")
+a3 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 m <- glm(rate.per.flower.mean.time~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
 anova(m, test = "Chisq")
+a4 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 #duration of visits
 m <- glm(net.visitation~net.treatment:insect.RTU %in% rep + mean.temp, family = "gaussian", data = freq.2015)
 anova(m, test = "Chisq")
+a5 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 m <- glm(net.visitation~net.treatment:insect.RTU %in% rep, family = "gaussian", data = freq.2016)
 anova(m, test = "Chisq")
+a6 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 ```
@@ -217,30 +223,46 @@ lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 #visitations
 m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
 anova(m, test = "Chisq")
-
+b1 <- AIC(m)
 require(lsmeans)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
 anova(m, test = "Chisq")
+b2 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 m <- glm(rate.per.flower.mean.time~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
 anova(m, test = "Chisq")
+b3 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 m <- glm(rate.per.flower.mean.time~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
 anova(m, test = "Chisq")
+b4 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 #duration of visits
 m <- glm(net.visitation~net.treatment + insect.RTU %in% rep + mean.temp, family = "gaussian", data = freq.2015)
 anova(m, test = "Chisq")
+b5 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
 
 m <- glm(net.visitation~net.treatment + insect.RTU %in% rep, family = "gaussian", data = freq.2016)
 anova(m, test = "Chisq")
+b6 <- AIC(m)
 lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
+```
+
+###AIC contrasts
+```{r AIC scores, warning=FALSE, message=FALSE}
+#Quick interactive-term vs additive-term model comparison
+x <- c(a1,a2,a3,a4,a5,a6)
+x
+y <- c(b1,b2,b3,b4,b5,b6)
+y
+z <- abs(x-y)
+z
 ```
 
 ###Model: bees only
