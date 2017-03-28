@@ -373,8 +373,10 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 1. Cannot ignore taxa specificity. Data viz clearly shows that bees were the only taxa to respond to treatments (and that by plotting without taxa this is lost).  
 2. Larrea flowers are not as attractive to bees as annuals within this ecosystem.  
 3. Bees repond to temp.
-4. There is support for the single-magnet hypothesis.  
-5. There is no support for the double-magnet prediction.  
+4. There is support for the single-magnet hypothesis.
+5. Both shrub species can generally facilitate annuals through pollination.
+6. There is no support for the double-magnet prediction, i.e. shrubs receive no reciprocal benefit or facilitation from annuals.
+7. Bees are the most effective pollinators, i.e. they also spend the most time with flowers and likely are the most effective service pollinators.
 
 ###Supporting analyses
 ```{r supporting, warning=FALSE, message=FALSE}
