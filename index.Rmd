@@ -389,6 +389,7 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 5. The appropriate model is a GLM with fixed effects. This assumes rep is fixed and not random effect in single-year models. A multi-year model would be modeled using glmer or glmer.nb because year would be treated as random.
 6. Gamma is the most likely family in several instances. Tests with weibull and others did not change outcome.
 7. The function lsmeans is the most appropriate for posthoc contrasts (main model has a nested effect). This is not always ideal. The function glht etc from multcomp package was also tested and performed similarly. The function lsmeansLT from lmerTest package if there is a random effect in model (and mixed) was similar and difflsmeans as well. The final option is to do a likelihood ratio post hoc tests with a chi-sq approximation (following main glmer fit). This involves fitting model then repeating with a null, intercept-only model and comparing the two fits.
+8. Outliers should be removed.
 
 ###Interpretation  
 1. Cannot ignore taxa specificity. Data viz clearly shows that bees were the only taxa to respond to treatments (and that by plotting without taxa this is lost).  
