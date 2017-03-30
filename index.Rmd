@@ -352,13 +352,13 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 ```{r model double magnet bees, warning=FALSE, message=FALSE}
 #Single-magnet hypothesis for bees (drop Larrea flowers)####
 #visitations
-m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = double.bees.2015)
+m <- glm(rate.per.flower~net.treatment + mean.temp, family = "gaussian", data = double.bees.2015)
 anova(m, test = "Chisq")
 
 require(lsmeans)
 lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
-m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = double.bees.2016)
+m <- glm(rate.per.flower~net.treatment + mean.temp, family = "gaussian", data = double.bees.2016)
 anova(m, test = "Chisq")
 lsmeans(m, pairwise~net.treatment, adjust="tukey")
 
