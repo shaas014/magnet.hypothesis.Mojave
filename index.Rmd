@@ -1,15 +1,14 @@
 ---
-title: ""
+title: ''
 author: "cjlortie and ally ruttan"
-date: "March 2017"
+date: "April 2017"
 output:
   html_document:
     theme: yeti
     toc: yes
     toc_depth: 3
     toc_float: yes
-  pdf_document:
-    toc: yes
+    always_allow_html: yes
 ---
 
 ![](./MNP.jpg)
@@ -52,7 +51,7 @@ data <- rbind.data.frame(data.2015, data.2016)
 data <- data %>% rename(net.treatment = treatment) #%>% na.omit(data) 
 
 #keep key columns and minimize working dataframe
-data <- data %>% select(-name, -plant, -start, -stop, -ID, -recorder)
+data <- data %>% select(-name, -plant, -start, -stop, -ID, -recorder) %>% filter(insect.RTU != "none")
 
 #set year and rep as characters
 data$year <- as.character(data$year)
@@ -69,327 +68,86 @@ data <- data %>% mutate(net.treatment = ifelse(net.treatment %in% c("SA"), "Larr
 frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU) %>% 
   summarise(net.time = sum(total.duration), mean.time = mean(total.duration), mean.temp = mean(temperature), mean.var.temp = mean(error), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), net.floral.density = sum(floral.density), mean.floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n())
 
-#richness in RTU
-#richness <- frequency %>% group_by(year, day, net.treatment, rep) %>% summarise( insect.richness = mean(insect.richness)) #did not work correctly. need to wrangle data differently
-
 #rates needed
-frequency <- frequency %>% mutate(rate.per.flower = (count/mean.floral.density)) %>% mutate(rate.per.flower.hr = rate.per.flower/net.time) %>% mutate(rate.per.flower.mean.time = rate.per.flower/mean.time)
-
-#exclude none and outliers
-freq.rtu <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <1) %>% filter(rate.per.flower.mean.time < 2)
-
-frequency <- frequency %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <2)
-
-frequency <- frequency %>% filter(insect.RTU != "none") %>% filter(rate.per.flower.hr <0.4) %>% filter(net.visitation <1) %>% filter(rate.per.flower.mean.time < 2)
+frequency <- frequency %>% mutate(rate.per.flower = (count/mean.floral.density)) 
 
 #view frequency data
 datatable(frequency)
 
-#separate by year for stats
-freq.2015 <- frequency %>% filter(year == 2015)
-freq.2016 <- frequency %>% filter(year == 2016)
+#separate net.treatment to individual vectors/factors
+#Expt 1. Single-magnet hypothesis
+expt1 <- frequency %>% filter(net.treatment == "Annual flowers under Larrea" | net.treatment == "Annual flowers in open" | net.treatment == "Annual flowers under Ambrosia")
 
-#bees only
-bees <- frequency %>% filter(insect.RTU == "bees")
-bees.2015 <- freq.2015  %>% filter(insect.RTU == "bees")
-bees.2016 <- freq.2016  %>% filter(insect.RTU == "bees")
+expt1 <- expt1 %>% mutate(microsite = ifelse(net.treatment %in% c("Annual flowers under Larrea"), "Larrea", ifelse(net.treatment %in% c("Annual flowers under Ambrosia"), "Ambrosia", ifelse(net.treatment %in% c("Annual flowers in open"), "open", "NA"))))
 
-#Single-magnet hypothesis data with bees
-magnet.bees.2015 <- bees.2015  %>% filter(net.treatment == "Annual flowers under Larrea" | net.treatment == "Annual flowers in open" | net.treatment == "Annual flowers under Ambrosia")
-magnet.bees.2016 <- bees.2016  %>% filter(net.treatment == "Annual flowers under Larrea" | net.treatment == "Annual flowers in open" | net.treatment == "Annual flowers under Ambrosia")
+#by years
+expt1.2015 <- expt1 %>% filter(year == 2015)
+expt1.2016 <- expt1 %>% filter(year == 2016)
 
-#Double-magnet hypothesis data with bees
-double.bees.2015 <- bees.2015  %>% filter(net.treatment == "Larrea flowers with annuals" | net.treatment == "Larrea flowers without annuals")
-double.bees.2016 <- bees.2016  %>% filter(net.treatment == "Larrea flowers with annuals" | net.treatment == "Larrea flowers without annuals")
+#Double-magnet Hypothesis
+expt2 <- frequency %>% filter(net.treatment == "Larrea flowers with annuals" | net.treatment == "Larrea flowers without annuals") 
+
+expt2 <- expt2 %>% mutate(treatment = ifelse(net.treatment %in% c("Larrea flowers with annuals"), "Larrea flowers + annuals", ifelse(net.treatment %in% c("Larrea flowers without annuals"), "Larrea flowers - annuals", "NA")))
+
+expt2.2015 <- expt2 %>% filter(year == 2015)
+expt2.2016 <- expt2 %>% filter(year == 2016)
+
+#Data structure: A total of 4 dataframes, two experiments, two years each#S
 
 ```
 
 ### Data visualization
 ```{r viz, warning=FALSE, message=FALSE}
+#expt1####
 #visitations####
-ggplot(freq.rtu, aes(net.treatment, count)) + geom_boxplot() + ylab("count") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
-
-ggplot(freq.rtu, aes(net.treatment, count, fill = insect.RTU)) + geom_boxplot() + ylab("count") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
-
-ggplot(freq.rtu, aes(net.treatment, rate.per.flower)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
-
-ggplot(freq.rtu, aes(net.treatment, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
-
-ggplot(freq.rtu, aes(net.treatment, rate.per.flower.mean.time)) + geom_boxplot() + ylab("rate per flower per mean hour recorded time") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
-
-ggplot(freq.rtu, aes(net.treatment, rate.per.flower.mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower per mean hour recorded time") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+ggplot(expt1, aes(microsite, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
 #visitation durations####
 #net visitation time
-ggplot(freq.rtu, aes(net.treatment, net.visitation)) + geom_boxplot() + ylab("net duration of visits (proportion of hour)") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
-
-ggplot(freq.rtu, aes(net.treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits (proportion of hour)") + scale_fill_brewer(palette = "Blues") + facet_wrap(~year) + coord_flip()
+expt1 <- expt1 %>% filter(net.visitation < 2)
+ggplot(expt1, aes(microsite, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
 #temperature####
-ggplot(freq.rtu, aes(mean.temp, rate.per.flower, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year)
-
-ggplot(freq.rtu, aes(mean.temp, rate.per.flower.mean.time, color = insect.RTU)) + geom_point() + ylab("rate per flower per mean hour recorded time") + geom_smooth(method = "lm") + facet_wrap(~year)
-
-ggplot(freq.rtu, aes(mean.temp, net.visitation, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + geom_smooth(method = "lm") + facet_wrap(~year)
+ggplot(expt1, aes(mean.temp, rate.per.flower, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Blues")
 
 #floral density####
-ggplot(freq.rtu, aes(mean.floral.density, rate.per.flower, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year)
+ggplot(expt1, aes(net.floral.density, count, color = insect.RTU)) + geom_point() + ylab("count") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Blues")
 
-ggplot(freq.rtu, aes(mean.floral.density, rate.per.flower.mean.time, color = insect.RTU)) + geom_point() + ylab("rate per flower per mean hour recorded time") + geom_smooth(method = "lm") + facet_wrap(~year)
+#expt2####
+#visitations####
+expt2 <- expt2 %>% filter(rate.per.flower < 0.25)
+ggplot(expt2, aes(treatment, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
-ggplot(freq.rtu, aes(mean.floral.density, net.visitation, color = insect.RTU)) + geom_point() + ylab("net duration of visits") + geom_smooth(method = "lm") + facet_wrap(~year)
+#visitation durations####
+#net visitation time
+expt2 <- expt2 %>% filter(net.visitation < 0.02)
+ggplot(expt2, aes(treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
-```
+#temperature####
+ggplot(expt2, aes(mean.temp, rate.per.flower, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Blues")
 
-###EDA
-```{r EDA, warning=FALSE, message=FALSE}
-summary(frequency)
-#distributions
-require(fitdistrplus)
-descdist(frequency$rate.per.flower, boot = 1000)
-descdist(frequency$rate.per.flower.mean.time, boot = 1000)
-descdist(frequency$net.visitation, boot = 1000)
-
-#plots
-plotdist(frequency$rate.per.flower)
-plotdist(frequency$rate.per.flower.mean.time)
-plotdist(frequency$net.visitation)
-
-#fitting
-a <- frequency$rate.per.flower
-fitg <- fitdist(a, "gamma")
-fitw <- fitdist(a, "weibull")
-fitn <- fitdist(a, "norm")
-fitl <- fitdist(a, "lnorm")
-gofstat(list(fitg, fitw, fitn, fitl), fitnames = c("gamma", "weibull", "normal", "lognormal"))
-
-a <- frequency$rate.per.flower.mean.time
-fitg <- fitdist(a, "gamma")
-fitw <- fitdist(a, "weibull")
-fitn <- fitdist(a, "norm")
-fitl <- fitdist(a, "lnorm")
-gofstat(list(fitg, fitw, fitn, fitl), fitnames = c("gamma", "weibull", "normal", "lognormal"))
-
-a <- frequency$net.visitation
-fitn <- fitdist(a, "norm")
-gofstat(fitn)  
-detach("package:fitdistrplus", unload = TRUE)
-#summary: gamma, gamma, normal have lowers AIC scores
+#floral density####
+ggplot(expt2, aes(net.floral.density, count, color = insect.RTU)) + geom_point() + ylab("count") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Blues")
 
 ```
 
-
-###Model: all with interaction terms
-```{r model all with interactions, warning=FALSE, message=FALSE}
-#Interaction-term models for all insect taxa####
-#visitations
-m <- glm(rate.per.flower~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
-anova(m, test = "Chisq")
-a1 <- AIC(m)
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-m <- glm(rate.per.flower~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
-anova(m, test = "Chisq")
-a2 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
-anova(m, test = "Chisq")
-a3 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment:insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
-anova(m, test = "Chisq")
-a4 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-#duration of visits
-m <- glm(net.visitation~net.treatment:insect.RTU %in% rep + mean.temp, family = "gaussian", data = freq.2015)
-anova(m, test = "Chisq")
-a5 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-m <- glm(net.visitation~net.treatment:insect.RTU %in% rep, family = "gaussian", data = freq.2016)
-anova(m, test = "Chisq")
-a6 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-```
-
-###Model: all with additive terms
+###Models
 ```{r model all with additive terms, warning=FALSE, message=FALSE}
 #Additive-term models for all insect taxa####
 #visitations
-m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
-anova(m, test = "Chisq")
-b1 <- AIC(m)
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-m <- glm(rate.per.flower~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
-anova(m, test = "Chisq")
-b2 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2015)
-anova(m, test = "Chisq")
-b3 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment + insect.RTU %in% rep + mean.temp, family = "Gamma", data = freq.2016)
-anova(m, test = "Chisq")
-b4 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-#duration of visits
-m <- glm(net.visitation~net.treatment + insect.RTU %in% rep + mean.temp, family = "gaussian", data = freq.2015)
-anova(m, test = "Chisq")
-b5 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-
-m <- glm(net.visitation~net.treatment + insect.RTU %in% rep, family = "gaussian", data = freq.2016)
-anova(m, test = "Chisq")
-b6 <- AIC(m)
-lsmeans(m, pairwise~net.treatment:insect.RTU, adjust="tukey")
-```
-
-###AIC contrasts
-```{r AIC scores, warning=FALSE, message=FALSE}
-#Quick interactive-term vs additive-term model comparison
-x <- c(a1,a2,a3,a4,a5,a6)
-x
-y <- c(b1,b2,b3,b4,b5,b6)
-y
-z <- abs(x-y)
-z
-```
-
-###Model: bees only
-```{r model bees only, warning=FALSE, message=FALSE}
-#Bees####
-#visitations
-m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = bees.2015)
+#expt1####
+m <- glm(rate.per.flower/mean.time~microsite*insect.RTU + mean.temp, family = "quasipoisson", data = expt1.2015)
 anova(m, test = "Chisq")
 
 require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
 
-m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
+require(multcomp)
+ph <- glht(m)
+summary(ph)
 
-m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = bees.2015)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-#duration of visits
-m <- glm(net.visitation~net.treatment + mean.temp, family = "gaussian", data = bees.2015)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(net.visitation~net.treatment, family = "gaussian", data = bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-```
-
-###Models: covariates
-```{r models for covariates, warning=FALSE, message=FALSE}
-#Temp####
-#Main models capture global effects for temp so need post hoc regressions
-#mean temp
-
-#error temp
-
-#CV temp
-
-#Check if cooler under shrubs
-
-
-#Floral density####
-#not captured in global models so need to do here on count and visitation durations
 
 ```
-
-###Model: single-magnet hypothesis bees
-```{r model single magnet bees, warning=FALSE, message=FALSE}
-#Single-magnet hypothesis for bees (drop Larrea flowers)####
-#visitations
-m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = magnet.bees.2015)
-anova(m, test = "Chisq")
-
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(rate.per.flower~net.treatment + mean.temp, family = "Gamma", data = magnet.bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = magnet.bees.2015)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = magnet.bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-#duration of visits
-m <- glm(net.visitation~net.treatment + mean.temp, family = "gaussian", data = magnet.bees.2015)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(net.visitation~net.treatment, family = "gaussian", data = magnet.bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-```
-
-###Model: double-magnet hypothesis bees
-```{r model double magnet bees, warning=FALSE, message=FALSE}
-#Single-magnet hypothesis for bees (drop Larrea flowers)####
-#visitations
-m <- glm(rate.per.flower~net.treatment + mean.temp, family = "gaussian", data = double.bees.2015)
-anova(m, test = "Chisq")
-
-require(lsmeans)
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(rate.per.flower~net.treatment + mean.temp, family = "gaussian", data = double.bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = double.bees.2015)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(rate.per.flower.mean.time~net.treatment + mean.temp, family = "Gamma", data = double.bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-#duration of visits
-m <- glm(net.visitation~net.treatment + mean.temp, family = "gaussian", data = double.bees.2015)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-m <- glm(net.visitation~net.treatment, family = "gaussian", data = double.bees.2016)
-anova(m, test = "Chisq")
-lsmeans(m, pairwise~net.treatment, adjust="tukey")
-
-```
-
-###Modeling assumptions  
-1. It is acceptable to aggregate all treatments into one vector.  
-2. The best fit model included interaction terms (not additive) and nests insect.RTU within reps. However, contrasts of AIC scores suggest that the additive model was best fit and given data viz and non-orthogonality issues, a compelling argument can be made for an additive global model.
-3. It is acceptable to treat each year separately and not in a single model (no Ambrosia in 2015 and different years).
-4. It is acceptable to model only bee data because of data viz.
-5. The appropriate model is a GLM with fixed effects. This assumes rep is fixed and not random effect in single-year models. A multi-year model would be modeled using glmer or glmer.nb because year would be treated as random.
-6. Gamma is the most likely family in several instances. Tests with weibull and others did not change outcome.
-7. The function lsmeans is the most appropriate for posthoc contrasts (main model has a nested effect). This is not always ideal. The function glht etc from multcomp package was also tested and performed similarly. The function lsmeansLT from lmerTest package if there is a random effect in model (and mixed) was similar and difflsmeans as well. The final option is to do a likelihood ratio post hoc tests with a chi-sq approximation (following main glmer fit). This involves fitting model then repeating with a null, intercept-only model and comparing the two fits.
-8. Outliers should be removed.
 
 ###Interpretation  
 1. Cannot ignore taxa specificity. Data viz clearly shows that bees were the only taxa to respond to treatments (and that by plotting without taxa this is lost).  
@@ -400,14 +158,4 @@ lsmeans(m, pairwise~net.treatment, adjust="tukey")
 6. There is no support for the double-magnet prediction, i.e. shrubs receive no reciprocal benefit or facilitation from annuals.
 7. Bees are the most effective pollinators, i.e. they also spend the most time with flowers and likely are the most effective service pollinators.
 
-###Supporting analyses
-```{r supporting, warning=FALSE, message=FALSE}
-#test multiple vector data structure####
-#RTU was not a factor in model, treat as response instead, i.e. number of different taxa as a richness response variable.  Also, include bees as a response. 
-
-#test Rii####
-
-
-
-```
 
