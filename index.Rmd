@@ -102,7 +102,7 @@ expt2.2016 <- expt2 %>% filter(year == 2016)
 #visitations####
 ggplot(expt1, aes(microsite, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
-#visitation durations####
+#visit durations####
 #net visitation time
 expt1 <- expt1 %>% filter(net.visitation < 2)
 ggplot(expt1, aes(microsite, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
@@ -118,7 +118,7 @@ ggplot(expt1, aes(net.floral.density, count, color = insect.RTU)) + geom_point()
 expt2 <- expt2 %>% filter(rate.per.flower < 0.25)
 ggplot(expt2, aes(treatment, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
-#visitation durations####
+#visit durations####
 #net visitation time
 expt2 <- expt2 %>% filter(net.visitation < 0.02)
 ggplot(expt2, aes(treatment, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
@@ -134,24 +134,70 @@ ggplot(expt2, aes(net.floral.density, count, color = insect.RTU)) + geom_point()
 ###Models
 ```{r model all with additive terms, warning=FALSE, message=FALSE}
 #Additive-term models for all insect taxa####
-#visitations
 #expt1####
-m <- glm(rate.per.flower/mean.time~microsite*insect.RTU + mean.temp, family = "quasipoisson", data = expt1.2015)
+#2015####
+#visitations
+m <- glm(rate.per.flower~microsite*insect.RTU + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2015)
 anova(m, test = "Chisq")
-
 require(lsmeans)
 lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
+#require(multcomp)
+#ph <- glht(m) #tests different from no effect
+#summary(ph)
 
-require(multcomp)
-ph <- glht(m)
-summary(ph)
+#visit duration####
+m <- glm(net.visitation~microsite*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt1.2015)
+anova(m, test = "Chisq")
+#lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
 
+#2016####
+#visitations
+m <- glm(rate.per.flower~microsite*insect.RTU + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
+#require(multcomp)
+#ph <- glht(m) #tests different from no effect
+#summary(ph)
+
+#visit duration####
+m <- glm(net.visitation~microsite*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt1.2016)
+anova(m, test = "Chisq")
+#lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
+
+#expt2####
+#2015####
+#visitations
+m <- glm(rate.per.flower~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "quasipoisson", data = expt2.2015)
+anova(m, test = "Chisq")
+#lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
+#require(multcomp)
+#ph <- glht(m) #tests different from no effect
+#summary(ph)
+
+#visit duration####
+m <- glm(net.visitation~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt2.2015)
+anova(m, test = "Chisq")
+#lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
+
+#2016####
+#visitations
+m <- glm(rate.per.flower~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "quasipoisson", data = expt2.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
+#require(multcomp)
+#ph <- glht(m) #tests different from no effect
+#summary(ph)
+
+#visit duration####
+m <- glm(net.visitation~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt2.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
 
 ```
 
 ###Interpretation  
-1. Cannot ignore taxa specificity. Data viz clearly shows that bees were the only taxa to respond to treatments (and that by plotting without taxa this is lost).  
-2. Larrea flowers are not as attractive to bees as annuals within this ecosystem.  
+1. Taxa specificity in plant-pollinator associations is critical for both foundation and annual plant species 
+2. Larrea flowers are less attractive to bees relative to annuals within this ecosystem.  
 3. Bees repond to temp.
 4. There is support for the single-magnet hypothesis.
 5. Both shrub species can generally facilitate annuals through pollination.
