@@ -84,10 +84,10 @@ expt1 <- expt1 %>% mutate(microsite = ifelse(net.treatment %in% c("Annual flower
 expt1.2015 <- expt1 %>% filter(year == 2015)
 expt1.2016 <- expt1 %>% filter(year == 2016)
 
-#Double-magnet Hypothesis
+#Expt2. Shrub flower-annual interactions through pollinators
 expt2 <- frequency %>% filter(net.treatment == "Larrea flowers with annuals" | net.treatment == "Larrea flowers without annuals") 
 
-expt2 <- expt2 %>% mutate(treatment = ifelse(net.treatment %in% c("Larrea flowers with annuals"), "Larrea flowers + annuals", ifelse(net.treatment %in% c("Larrea flowers without annuals"), "Larrea flowers - annuals", "NA")))
+expt2 <- expt2 %>% mutate(treatment = ifelse(net.treatment %in% c("Larrea flowers with annuals"), "Larrea + annuals", ifelse(net.treatment %in% c("Larrea flowers without annuals"), "Larrea - annuals", "NA")))
 
 expt2.2015 <- expt2 %>% filter(year == 2015)
 expt2.2016 <- expt2 %>% filter(year == 2016)
@@ -193,15 +193,53 @@ m <- glm(net.visitation~net.treatment*insect.RTU + mean.temp + offset(mean.time)
 anova(m, test = "Chisq")
 lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
 
+#temp####
+#bees only
+fit <- lm(rate.per.flower~mean.temp, data = subset(expt1.2015, insect.RTU == "bees"))
+summary(fit) 
+
+fit <- lm(rate.per.flower~mean.temp, data = subset(expt1.2016, insect.RTU == "bees"))
+summary(fit)
+
+#floral density####
+#bees only
+#expt1
+fit <- lm(count~net.floral.density, data = subset(expt1.2015, insect.RTU == "bees"))
+summary(fit)
+a1 <- AIC(fit)
+
+fit <- lm(count~net.floral.density, data = subset(expt1.2016, insect.RTU == "bees"))
+summary(fit) 
+a2 <- AIC(fit)
+
+#expt2
+fit <- lm(count~net.floral.density, data = subset(expt2.2015, insect.RTU == "bees"))
+summary(fit)
+a3 <- AIC(fit)
+
+fit <- lm(count~net.floral.density, data = subset(expt2.2016, insect.RTU == "bees"))
+summary(fit) 
+a4 <- AIC(fit)
+
+#contrasts between annual and shrub flowers
+#Quick interactive-term vs additive-term model comparison
+x <- c(a1,a2)
+x
+y <- c(a3, a4)
+y
+z <- abs(x-y)
+z
+
 ```
 
 ###Interpretation  
-1. Taxa specificity in plant-pollinator associations is critical for both foundation and annual plant species 
-2. Larrea flowers are less attractive to bees relative to annuals within this ecosystem.  
-3. Bees repond to temp.
-4. There is support for the single-magnet hypothesis.
-5. Both shrub species can generally facilitate annuals through pollination.
-6. There is no support for the double-magnet prediction, i.e. shrubs receive no reciprocal benefit or facilitation from annuals.
-7. Bees are the most effective pollinators, i.e. they also spend the most time with flowers and likely are the most effective service pollinators.
+1. There is support for the single-magnet hypothesis through bees.
+2. Both shrub species can generally facilitate annuals through pollination through bees.
+3. Taxa specificity in plant-pollinator associations is critical for both foundation and annual plant species 
+4. Larrea flowers are less attractive to bees relative to annuals within this ecosystem.  
+5. Bees repond to temp by increasing visitation rates to annuals.
+6. Bees respond to positively to increasing floral density of both annual and Larrea flowers.
+7. There is evidence that shrubs receive no reciprocal benefit or facilitation from annuals, and furthermore, that there is a cost to facilitation by these foundation shrubs.
+8. Bees are the most effective pollinators, i.e. they also spend the most time with annual flowers and likely are the most effective service pollinators.
 
 
