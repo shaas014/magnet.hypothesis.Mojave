@@ -100,12 +100,24 @@ expt2.2016 <- expt2 %>% filter(year == 2016)
 ```{r viz, warning=FALSE, message=FALSE}
 #expt1####
 #visitations####
+#unweighted
+ggplot(expt1, aes(microsite, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+
+#weighted
 ggplot(expt1, aes(microsite, rate.per.flower/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+
+ggplot(expt1, aes(microsite, rate.per.flower/mean.time, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
 #visit durations####
 #net visitation time
 expt1 <- expt1 %>% filter(net.visitation < 2)
+ggplot(expt1, aes(microsite, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+
+expt1 <- expt1 %>% filter(net.visitation < 2)
 ggplot(expt1, aes(microsite, net.visitation/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+
+expt1 <- expt1 %>% filter(net.visitation < 2)
+ggplot(expt1, aes(microsite, net.visitation/mean.time, fill = insect.RTU)) + geom_bar(stat= "identity") + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
 #temperature####
 ggplot(expt1, aes(mean.temp, rate.per.flower/mean.time, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Blues")
@@ -144,6 +156,13 @@ lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
 #require(multcomp)
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
+
+#do we need to add in rep at all as a nested, random effect?
+m <- glm(rate.per.flower~microsite*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2015)
+anova(m, test = "Chisq")
+require(lsmeans)
+lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
+
 
 #visit duration####
 m <- glm(net.visitation~microsite*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt1.2015)
