@@ -101,17 +101,19 @@ map
 
 ###Maps
 ```{r maps, warning=FALSE, message=FALSE}
+#just one point
+map <- map %>% filter(lat < 35.3)
+
 require(ggmap)
-cali <- get_map(location = c(lon = -115.4, lat = 35.31), zoom = 10)
+cali <- get_map(location = c(lon = -115.6, lat = 35.06), zoom = 10)
 #cali <-get_googlemap("california", crop= FALSE, zoom = 10)
 p <-ggmap(cali)
-p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 12, color = "blue")
+p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 6, color = "blue")
 
 #really zoomed out
-cali <- get_map(location = c(lon = -115.4, lat = 35.31), zoom = 9)
+cali <- get_map(location = c(lon = -115.6, lat = 35.06), zoom = 9)
 p <-ggmap(cali)
-p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 5, color = "blue")
-
+p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 4, color = "blue")
 
 ```
 
