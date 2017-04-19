@@ -153,63 +153,106 @@ ggplot(expt2, aes(net.floral.density, count, color = insect.RTU)) + geom_point()
 m <- glm(rate.per.flower~microsite*insect.RTU + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2015)
 anova(m, test = "Chisq")
 require(lsmeans)
+lsmeans(m, pairwise~insect.RTU, adjust="tukey")
+
+#all contrasts
 lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
+
 #require(multcomp)
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
 
-#do we need to add in rep at all as a nested, random effect?
+#rep at all as a nested, random effect
 m <- glm(rate.per.flower~microsite*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2015)
 anova(m, test = "Chisq")
-require(lsmeans)
 lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
-
 
 #visit duration####
 m <- glm(net.visitation~microsite*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt1.2015)
 anova(m, test = "Chisq")
 #lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
 
+#rep at all as a nested, random effect
+m <- glm(net.visitation~microsite*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "gaussian", data = expt1.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
+
 #2016####
 #visitations
 m <- glm(rate.per.flower~microsite*insect.RTU + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2016)
 anova(m, test = "Chisq")
+lsmeans(m, pairwise~insect.RTU, adjust="tukey")
+
+#all contrasts
 lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
+
 #require(multcomp)
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
+
+#rep at all as a nested, random effect
+m <- glm(rate.per.flower~microsite*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2016)
+anova(m, test = "Chisq")
+
 
 #visit duration####
 m <- glm(net.visitation~microsite*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt1.2016)
 anova(m, test = "Chisq")
 #lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
 
+#rep at all as a nested, random effect
+m <- glm(net.visitation~microsite*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "gaussian", data = expt1.2016)
+anova(m, test = "Chisq")
+
 #expt2####
 #2015####
 #visitations
 m <- glm(rate.per.flower~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "quasipoisson", data = expt2.2015)
 anova(m, test = "Chisq")
-#lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
+lsmeans(m, pairwise~insect.RTU)
+
+#all contrasts
+lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
 #require(multcomp)
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
+
+#rep at all as a nested, random effect
+m <- glm(rate.per.flower~net.treatment*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt2.2015)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~insect.RTU)
 
 #visit duration####
 m <- glm(net.visitation~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt2.2015)
 anova(m, test = "Chisq")
 #lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
 
+#rep at all as a nested, random effect
+m <- glm(net.visitation~net.treatment*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "gaussian", data = expt2.2015)
+anova(m, test = "Chisq")
+
 #2016####
 #visitations
 m <- glm(rate.per.flower~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "quasipoisson", data = expt2.2016)
 anova(m, test = "Chisq")
+#all contrasts
 lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
+
 #require(multcomp)
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
 
+#rep at all as a nested, random effect
+m <- glm(rate.per.flower~net.treatment*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt2.2016)
+anova(m, test = "Chisq")
+
 #visit duration####
 m <- glm(net.visitation~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt2.2016)
+anova(m, test = "Chisq")
+lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
+
+#rep at all as a nested, random effect
+m <- glm(net.visitation~net.treatment*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "gaussian", data = expt2.2016)
 anova(m, test = "Chisq")
 lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
 
