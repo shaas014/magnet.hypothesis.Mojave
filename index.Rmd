@@ -92,7 +92,26 @@ expt2 <- expt2 %>% mutate(treatment = ifelse(net.treatment %in% c("Larrea flower
 expt2.2015 <- expt2 %>% filter(year == 2015)
 expt2.2016 <- expt2 %>% filter(year == 2016)
 
-#Data structure: A total of 4 dataframes, two experiments, two years each#S
+#Data structure: A total of 4 dataframes, two experiments, two years each
+
+map <- read_csv("data/locations.csv")
+map
+
+```
+
+###Maps
+```{r maps, warning=FALSE, message=FALSE}
+require(ggmap)
+cali <- get_map(location = c(lon = -115.4, lat = 35.31), zoom = 10)
+#cali <-get_googlemap("california", crop= FALSE, zoom = 10)
+p <-ggmap(cali)
+p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 12, color = "blue")
+
+#really zoomed out
+cali <- get_map(location = c(lon = -115.4, lat = 35.31), zoom = 9)
+p <-ggmap(cali)
+p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 5, color = "blue")
+
 
 ```
 
