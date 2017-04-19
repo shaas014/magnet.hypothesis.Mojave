@@ -101,45 +101,46 @@ expt2.2016 <- expt2 %>% filter(year == 2016)
 #expt1####
 #visitations####
 #unweighted
-ggplot(expt1, aes(microsite, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+ggplot(expt1, aes(microsite, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
 
 #weighted
-ggplot(expt1, aes(microsite, rate.per.flower/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+ggplot(expt1, aes(microsite, rate.per.flower/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
 
 #ggplot(expt1, aes(microsite, rate.per.flower/mean.time, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
 #visit durations####
 #net visitation time
 expt1 <- expt1 %>% filter(net.visitation < 2)
-ggplot(expt1, aes(microsite, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+ggplot(expt1, aes(microsite, net.visitation, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
 
 expt1 <- expt1 %>% filter(net.visitation < 2)
-ggplot(expt1, aes(microsite, net.visitation/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+ggplot(expt1, aes(microsite, net.visitation/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
 
 #expt1 <- expt1 %>% filter(net.visitation < 2)
 #ggplot(expt1, aes(microsite, net.visitation/mean.time, fill = insect.RTU)) + geom_bar(stat= "identity") + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
 #temperature####
-ggplot(expt1, aes(mean.temp, rate.per.flower/mean.time, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "GnBu")
+ggplot(expt1, aes(mean.temp, rate.per.flower/mean.time, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Paired") 
+
 
 #floral density####
-ggplot(expt1, aes(net.floral.density, count, color = insect.RTU)) + geom_point() + ylab("count") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "GnBu")
+ggplot(expt1, aes(net.floral.density, count, color = insect.RTU)) + geom_point() + ylab("count") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Paired")
 
 #expt2####
 #visitations####
 expt2 <- expt2 %>% filter(rate.per.flower < 0.25)
-ggplot(expt2, aes(treatment, rate.per.flower/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+ggplot(expt2, aes(treatment, rate.per.flower/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
 
 #visit durations####
 #net visitation time
 expt2 <- expt2 %>% filter(net.visitation < 0.02)
-ggplot(expt2, aes(treatment, net.visitation/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
+ggplot(expt2, aes(treatment, net.visitation/mean.time, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
 
 #temperature####
-ggplot(expt2, aes(mean.temp, rate.per.flower/mean.time, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Blues")
+ggplot(expt2, aes(mean.temp, rate.per.flower/mean.time, color = insect.RTU)) + geom_point() + ylab("rate per flower") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Paired")
 
 #floral density####
-ggplot(expt2, aes(net.floral.density, count, color = insect.RTU)) + geom_point() + ylab("count") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Blues")
+ggplot(expt2, aes(net.floral.density, count, color = insect.RTU)) + geom_point() + ylab("count") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Paired")
 
 ```
 
