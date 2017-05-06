@@ -183,10 +183,20 @@ lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
 
+#Overdisperion
+m <- update(m, family = "poisson")
+require(AER)
+dispersiontest(m, trafo = 1) #not overdispersed
+
 #rep at all as a nested, random effect
 m <- glm(rate.per.flower~microsite*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2015)
 anova(m, test = "Chisq")
 lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
+
+#Overdisperion
+m <- update(m, family = "poisson")
+require(AER)
+dispersiontest(m, trafo = 1) #not overdispersed
 
 #visit duration####
 m <- glm(net.visitation~microsite*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt1.2015)
@@ -207,6 +217,11 @@ lsmeans(m, pairwise~insect.RTU, adjust="tukey")
 #all contrasts
 lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
 
+#Overdisperion
+m <- update(m, family = "poisson")
+require(AER)
+dispersiontest(m, trafo = 1) #not overdispersed
+
 #require(multcomp)
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
@@ -214,6 +229,11 @@ lsmeans(m, pairwise~microsite*insect.RTU, adjust="tukey")
 #rep at all as a nested, random effect
 m <- glm(rate.per.flower~microsite*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt1.2016)
 anova(m, test = "Chisq")
+
+#Overdisperion
+m <- update(m, family = "poisson")
+require(AER)
+dispersiontest(m, trafo = 1) #not overdispersed
 
 
 #visit duration####
@@ -238,10 +258,20 @@ lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
 
+#Overdisperion
+m <- update(m, family = "poisson")
+require(AER)
+dispersiontest(m, trafo = 1) #not overdispersed
+
 #rep at all as a nested, random effect
 m <- glm(rate.per.flower~net.treatment*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt2.2015)
 anova(m, test = "Chisq")
 lsmeans(m, pairwise~insect.RTU)
+
+#Overdisperion
+m <- update(m, family = "poisson")
+require(AER)
+dispersiontest(m, trafo = 1) #not overdispersed
 
 #visit duration####
 m <- glm(net.visitation~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt2.2015)
@@ -259,6 +289,11 @@ anova(m, test = "Chisq")
 #all contrasts
 lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
 
+#Overdisperion
+m <- update(m, family = "poisson")
+require(AER)
+dispersiontest(m, trafo = 1) #not overdispersed
+
 #require(multcomp)
 #ph <- glht(m) #tests different from no effect
 #summary(ph)
@@ -266,6 +301,11 @@ lsmeans(m, pairwise~net.treatment*insect.RTU, adjust="tukey")
 #rep at all as a nested, random effect
 m <- glm(rate.per.flower~net.treatment*insect.RTU%in%rep + mean.temp + offset(mean.time), family = "quasipoisson", data = expt2.2016)
 anova(m, test = "Chisq")
+
+#Overdisperion
+m <- update(m, family = "poisson")
+require(AER)
+dispersiontest(m, trafo = 1) #not overdispersed
 
 #visit duration####
 m <- glm(net.visitation~net.treatment*insect.RTU + mean.temp + offset(mean.time), family = "gaussian", data = expt2.2016)
