@@ -22,14 +22,14 @@ output:
 (1) The frequency and duration of pollinator visitations to annuals is greater under shrubs than in the paired-open microsites (magnet H because of concentration).  
 (2) Annual plants under flowering entomophilous shrubs (*Larrea tridentata*) will have a higher frequency and duration of pollinator visitations than annual plants under anemophilous shrubs (*Ambrosia dumosa*) because of higher concentrations of suitable floral resources for pollinators (specificity of pollinator faciliation).  
 (3) Shrubs with annuals in their understory will have a higher frequency and duration of pollinator visitations than shrubs without annuals due to increased concentrations of floral resources for pollinators (reverse magnet effect and reciprocal benefits).  
-(4) Sites with both shrubs and annuals will have the highest frequency and duration of pollinator visitations to both the shrubs and the annuals (i.e. annuals under shrubs also with flowers are visited the most).
+
 
 An interesting corollary is that there are appropriate floral resources for desert pollinators, that they discriminate, and that entomophilous and anemophilous shrubs facilitate flowering similarly.
 
 ![](./map.jpg)
 
 ###Data wrangling
-```{r library and data loads, warning=FALSE, message=FALSE}
+```{r library, warning=FALSE, message=FALSE}
 #libraries####
 library(tidyverse)
 library(DT)
@@ -37,7 +37,11 @@ library(lubridate)
 library(ggpubr)
 library(glmmTMB)
 library(car)
+library(performance)
+library(emmeans)
+```
 
+```{r data loads, warning=FALSE, message=FALSE}
 #meta-data####
 meta <- read_csv("data/meta-data.csv")
 datatable(meta)
@@ -54,23 +58,42 @@ data <- rbind.data.frame(data.2015, data.2016)
 data <- data %>% rename(net.treatment = treatment) #%>% na.omit(data) 
 
 #keep key columns and minimize working dataframe
-data <- data %>% select(-name, -plant, -start, -stop, -ID, -recorder) %>% filter(insect.RTU != "none")
+data <- data %>% select(-name, -plant, -start, -stop, -ID, -recorder) %>% 
+  filter(insect.RTU != "none")
+
 
 #set year and rep as characters
 data$year <- as.character(data$year)
 data$rep <- as.character(data$rep)
 
+
 #convert times to total seconds then to hour
 data$total.duration <- (as.numeric(data$total.duration))/3600
 data$visitation.duration <- (as.numeric(data$visitation.duration))/3600
 
-#recode net.treatment column
-data <- data %>% mutate(net.treatment = ifelse(net.treatment %in% c("SA"), "Larrea flowers with annuals", ifelse(net.treatment %in% c("SX"), "Larrea flowers without annuals", ifelse(net.treatment %in% c("SAA"), "Annual flowers under Larrea",ifelse(net.treatment %in% c("OA"), "Annual flowers in open",ifelse(net.treatment %in% c("AMB"), "Annual flowers under Ambrosia","NA"))))), observation.type = ifelse(floral.density == 200, "in-situ", "video"))
+#recode net.treatment column and separate observation types
+data <- data %>% mutate(
+  net.treatment = ifelse(net.treatment %in% c("SA"), "Larrea flowers with annuals",
+                         ifelse(net.treatment %in% c("SX"), "Larrea flowers without annuals",
+                                ifelse(net.treatment %in% c("SAA"), "Annual flowers under Larrea",
+                                       ifelse(net.treatment %in% c("OA"), "Annual flowers in open",
+                                              ifelse(net.treatment %in% c("AMB"), "Annual flowers under Ambrosia","NA"))))), 
+  observation.type = ifelse(floral.density == 200, "in-situ", "video"),
+  shrub.volume = 4/3 * pi * shrub.x * shrub.y * shrub.z,
+  date = mdy(date))
 
 #frequency wrangled by RTU####
 #total.duration has two values for each replicate only if film was divided into two files, I've summed them here.
-frequency <- data %>% group_by(year, day, net.treatment, rep, insect.RTU, observation.type) %>% 
-  summarise(net.time = sum(unique(total.duration)), mean.temp = mean(temperature), mean.var.temp = mean(error), net.visitation = sum(visitation.duration), mean.visitation.duration = mean(visitation.duration), floral.density = mean(floral.density), insect.richness = n_distinct(insect.RTU), count = n()) %>% 
+frequency <- data %>% 
+  group_by(year, day, net.treatment, rep, insect.RTU, observation.type, shrub.volume) %>% 
+  summarise(net.time = sum(unique(total.duration)), 
+            mean.temp = mean(temperature), 
+            mean.var.temp = mean(error), 
+            net.visitation = sum(visitation.duration), 
+            mean.visitation.duration = mean(visitation.duration), 
+            floral.density = mean(floral.density), 
+            insect.richness = n_distinct(insect.RTU), 
+            count = n()) %>% 
   ungroup() %>% 
   pivot_wider(
     names_from = insect.RTU,
@@ -90,7 +113,7 @@ frequency <- frequency %>% mutate(rate.per.flower = (count/floral.density))
 
 #site ids are needed to group variables by site
 days.all <- frequency %>% group_by(year, day, rep) %>% 
-  #funciton doesn't matter, only getting the unique set of year, day, and rep
+  #function doesn't matter, only getting the unique set of year, day, and rep
   summarise(count = n()) %>% 
   select(-count) %>% 
   ungroup() %>% 
@@ -106,51 +129,148 @@ datatable(frequency)
 #Expt 1. Single-magnet hypothesis
 expt1 <- frequency %>% filter(net.treatment == "Annual flowers under Larrea" | net.treatment == "Annual flowers in open" | net.treatment == "Annual flowers under Ambrosia")
 
-expt1 <- expt1 %>% mutate(microsite = ifelse(net.treatment %in% c("Annual flowers under Larrea"), "Larrea", ifelse(net.treatment %in% c("Annual flowers under Ambrosia"), "Ambrosia", ifelse(net.treatment %in% c("Annual flowers in open"), "open", "NA"))))
+expt1 <- expt1 %>% mutate(microsite = ifelse(net.treatment %in% c("Annual flowers under Larrea"), "Larrea",
+                                             ifelse(net.treatment %in% c("Annual flowers under Ambrosia"), "Ambrosia",
+                                                    ifelse(net.treatment %in% c("Annual flowers in open"), "open", "NA"))))
 
 #by observation type
-expt1.video = expt1 %>% filter(observation.type == "video")
-expt1.insitu = expt1 %>% filter(observation.type == "in-situ")
+expt1.video = expt1 %>% filter(observation.type == "video") %>% 
+  mutate(duration.hour = net.visitation/net.time)
 
 #by years
 expt1.2015.video <- expt1 %>% filter(year == 2015 & observation.type == "video")
-expt1.2015.insitu <- expt1 %>% filter(year == 2015 & observation.type == "in-situ")
 expt1.2016 <- expt1 %>% filter(year == 2016) #no in-situ for 2016
 
 #Expt2. Shrub flower-annual interactions through pollinators
 expt2 <- frequency %>% filter(net.treatment == "Larrea flowers with annuals" | net.treatment == "Larrea flowers without annuals") 
 
-expt2 <- expt2 %>% mutate(treatment = ifelse(net.treatment %in% c("Larrea flowers with annuals"), "Larrea + annuals", ifelse(net.treatment %in% c("Larrea flowers without annuals"), "Larrea - annuals", "NA")))
+expt2 <- expt2 %>% mutate(treatment = ifelse(net.treatment %in% c("Larrea flowers with annuals"), "Larrea + annuals",
+                                             ifelse(net.treatment %in% c("Larrea flowers without annuals"), "Larrea - annuals", "NA"))) 
 
-expt2.video = expt2 %>% filter(observation.type == "video")
-expt2.insitu = expt2 %>% filter(observation.type == "in-situ")
-
-expt2.2015.video <- expt2 %>% filter(year == 2015 & observation.type == "video")
-expt2.2015.insitu <- expt2 %>% filter(year == 2015 & observation.type == "in-situ")
-expt2.2016 <- expt2 %>% filter(year == 2016) #no video for 2016
+expt2.insitu = expt2 %>% filter(observation.type == "in-situ" ) %>% 
+  #no "other" insects were observed in 2016, so remove from 2016 but not 2015
+  filter(year == 2015|insect.RTU != "other")
+  
+expt2.2015.insitu <- expt2.insitu %>% filter(year == 2015)
+expt2.2016 <- expt2 %>% filter(year == 2016 & insect.RTU != "other") #no video for 2016
 
 #Data structure: A total of 4 dataframes, two experiments, two years each
 
 map <- read_csv("data/locations.csv")
 map
 
+mean(expt1.video$net.time * 60)
 ```
+
+```{r temperature and environmental data}
+#data collected using hobos
+data.temp <- read_csv("data/hobodata.csv")
+
+#format date, get year, hour, and day. Remove spurious temperatures
+data.temp <- data.temp %>% 
+  mutate(date = mdy(date),
+    year = lubridate::year(date),
+    hour = hour(time),
+    day = day(date)) %>% 
+  filter(temperature > -50)
+
+data.temp$year <- as.character(data.temp$year)
+
+#reformat 2015 codings
+data.temp.2015 <- data.temp %>% 
+  filter(year == 2015) %>% 
+  separate(treatment,
+           into = c("shrub", "net.treatment", "rep"),
+           sep = "-") %>% 
+  filter(!(shrub == "A" & net.treatment == "S")) %>% 
+  dplyr::select(-shrub) %>% 
+  mutate(site.id = rep)
+  
+#reformat 2016 codings
+data.temp.2016 <- data.temp %>% 
+  filter(year == 2016) %>% 
+  separate(treatment,
+           into = c("net.treatment", "rep"),
+           sep = " ") %>% 
+  mutate(site.id = rep)
+
+#numbering reps as unique ids
+data.temp.2016$rep <- as.numeric(data.temp.2016$rep) + 6
+
+#rename variables
+hobo.temp <- rbind(data.temp.2015, data.temp.2016) %>% 
+  mutate(
+    net.treatment = ifelse(net.treatment %in% c("OPEN", "O"), "open", 
+                                ifelse(net.treatment %in% c("SX"), "Larrea without annuals", 
+                                       ifelse(net.treatment %in% c("SA", "S"), "Larrea with annuals",
+                                              ifelse(net.treatment %in% c("AMB"), "Ambrosia", NA
+                                                     #ifelse(net.treatment %in% c("S"), "Larrea", "NA")
+                                                     )))),
+         shrub.volume = 4/3 * pi * x1 * x2 * x3) %>% 
+  dplyr::select(-x1,-x2,-x3) 
+
+#remove NAs
+hobo.temp <- hobo.temp[!is.na(hobo.temp$net.treatment),]
+
+#average temperature per day during the collecting period
+temperature.collected <- hobo.temp %>%
+  filter(date %in% data$date & hour >= 10 & hour <= 12) %>% 
+  group_by(net.treatment, day, site.id, year) %>% 
+  summarise(temperature = mean(temperature)) %>% 
+  mutate(type = "collection")
+
+#Average temperature per day during the study period
+hobo.temp.day <- hobo.temp %>% 
+  group_by(year, net.treatment, day, site.id) %>% 
+  summarise(temperature =  mean(temperature)) %>% 
+  mutate(type = "study period")
+
+hobo.temp.graph <- rbind(temperature.collected, hobo.temp.day)
+
+#environmental data from the previous season
+data.weather <- read_csv("data/WRCC weather data.csv")
+
+data.weather$date <- mdy(data.weather$date)
+data.weather$year <- as.character(data.weather$year)
+
+#delineate each growing season
+data.weather <- data.weather %>% 
+  mutate(rainy.season = ifelse(year == 2016, "grow.2016",
+                                 ifelse(year == 2014, "grow.2015",
+                                        ifelse(year == 2015 & day.year < 122, "grow.2015",
+                                               ifelse(year == 2015 & day.year > 304, "grow.2016", NA))))) %>% 
+  na.omit()
+
+#summaries of different environmental variables
+data.weather %>% group_by(rainy.season) %>% 
+  summarize(mean.temp = mean(mean.temp),
+            mean.precipitation = mean(precipitation),
+            precipitation = sum(precipitation),
+            radiation = mean(radiation))
+
+# environment <- data.weather %>% 
+#   dplyr::select(year, date, rainy.season, mean.temp, radiation, precipitation) %>% 
+#   pivot_longer(cols = c(mean.temp, radiation, precipitation),
+#                               names_to = "variable",
+#                               values_to = "value")
+```
+
 
 ###Maps
 ```{r maps, warning=FALSE, message=FALSE}
-#just one point
-map <- map %>% filter(lat < 35.3)
-
-require(ggmap)
-cali <- get_map(location = c(lon = -115.6, lat = 35.06), zoom = 10)
-#cali <-get_googlemap("california", crop= FALSE, zoom = 10)
-p <-ggmap(cali)
-p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 6, color = "blue")
-
-#really zoomed out
-cali <- get_map(location = c(lon = -115.6, lat = 35.06), zoom = 9)
-p <-ggmap(cali)
-p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 4, color = "blue")
+# #just one point
+# map <- map %>% filter(lat < 35.3)
+# 
+# require(ggmap)
+# cali <- get_map(location = c(lon = -115.6, lat = 35.06), zoom = 10)
+# #cali <-get_googlemap("california", crop= FALSE, zoom = 10)
+# p <-ggmap(cali)
+# p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 6, color = "blue")
+# 
+# #really zoomed out
+# cali <- get_map(location = c(lon = -115.6, lat = 35.06), zoom = 9)
+# p <-ggmap(cali)
+# p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 4, color = "blue")
 
 ```
 
@@ -158,11 +278,6 @@ p + geom_point(data=map, aes(x=long, y=lat), alpha = .25, size = 4, color = "blu
 ```{r viz, warning=FALSE, message=FALSE}
 #expt1####
 #visitations####
-#unweighted
-#in-situ
-ggplot(expt1.insitu, aes(microsite, rate.per.flower, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Paired")
-
-#video
 ggplot(expt1.video, aes(microsite, rate.per.flower, fill = insect.RTU)) + 
   geom_boxplot() + 
   ylab("Visitation Rate per Flower") + 
@@ -172,14 +287,9 @@ ggplot(expt1.video, aes(microsite, rate.per.flower, fill = insect.RTU)) +
   theme_classic() +
   ggsave("Tables and Figures\\Figure 1 flowering rate per microsite.pdf", height = 5, width = 7)
 
-#weighted
-ggplot(expt1.video, aes(microsite, rate.per.flower/net.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
-
-#ggplot(expt1, aes(microsite, rate.per.flower/net.time, fill = insect.RTU)) + geom_bar(stat="identity") + ylab("rate per flower") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
-
 #visit durations####
 #net visitation time
-ggplot(expt1.video %>% filter(net.visitation < 2), aes(microsite, net.visitation, fill = insect.RTU)) + 
+ggplot(expt1.video , aes(microsite, net.visitation, fill = insect.RTU)) + 
   geom_boxplot() + 
   ylab("Net Duration of Visits per Hour") + 
   xlab("Microsite") +
@@ -188,14 +298,9 @@ ggplot(expt1.video %>% filter(net.visitation < 2), aes(microsite, net.visitation
   theme_classic() +
   ggsave("Tables and Figures/Figure 2 net duration per hour.pdf", height = 5, width = 7)
 
-expt1.video <- expt1.video %>% filter(net.visitation < 2)
-ggplot(expt1.video, aes(microsite, net.visitation/net.time, fill = insect.RTU)) + geom_boxplot() + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
-
-#expt1 <- expt1 %>% filter(net.visitation < 2)
-#ggplot(expt1, aes(microsite, net.visitation/net.time, fill = insect.RTU)) + geom_bar(stat= "identity") + ylab("net duration of visits per hour") + scale_fill_brewer(palette = "Blues") + facet_grid(~year)
 
 #temperature####
-ggplot(expt1.video, aes(mean.temp, rate.per.flower/net.time, color = insect.RTU)) + 
+ggplot(expt1.video, aes(mean.temp, rate.per.flower, color = insect.RTU)) + 
   geom_point() + 
   ylab("Visitation Rate per Flower") + 
   xlab("Mean Temperature (C)") +
@@ -203,11 +308,19 @@ ggplot(expt1.video, aes(mean.temp, rate.per.flower/net.time, color = insect.RTU)
   facet_wrap(~year) + 
   scale_color_brewer(name = "Insect RTU", palette = "Paired") +
   theme_classic() +
-  ggsave("Tables and Figures/Figure S1 visitation rate per temperature.pdf", width = 7, height = 5)
+  ggsave("Tables and Figures/Figure S2 Malacothrix visitation rate per temperature.pdf", width = 7, height = 5)
 
 
 #floral density####
-ggplot(expt1.video, aes(floral.density, count, color = insect.RTU)) + geom_point() + ylab("count") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Paired")
+ggplot(expt1.video, aes(floral.density, count, color = insect.RTU)) + 
+  geom_point() + 
+  ylab("Count") + 
+  xlab("Floral Density") +
+  geom_smooth(method = "lm") + 
+  facet_wrap(~year) + 
+  scale_color_brewer(name = "Insect RTU", palette = "Paired") +
+  theme_classic() +
+  ggsave("Tables and Figures/Figure S4 Floral Density.pdf", width = 7, height = 4)
 
 #expt2####
 #visitations####
@@ -220,36 +333,20 @@ ggplot(expt2.insitu, aes(treatment, rate.per.flower, fill = insect.RTU)) +
   theme_classic() +
   ggsave("Tables and Figures/Figure 3 flowering rate per larrea treatment.pdf", height = 5, width = 7)
 
-ggplot(expt2.video, aes(treatment, rate.per.flower/net.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
-
-expt2.video <- expt2.video %>% filter(rate.per.flower < 0.25)
-ggplot(expt2.video, aes(treatment, rate.per.flower/net.time, fill = insect.RTU)) + geom_boxplot() + ylab("rate per flower") + scale_fill_brewer(palette = "Paired") + facet_grid(~year)
 
 #visit durations####
-#net visitation time
-plotlist <- list()
-plotlist[[1]] <- ggplot(expt2.video %>% filter(net.visitation < 0.02), aes(treatment, net.visitation/net.time, fill = insect.RTU)) +
+ggplot(expt2.2016, aes(treatment, net.visitation * 3600, fill = insect.RTU)) + 
   geom_boxplot() + 
-  ylab("") +
-  xlab("") +
-  ggtitle("2015 Video") +
+  ylab("Net Duration of Visits (s)") +
+  xlab("Treatment") +
   scale_fill_brewer(name = "Insect RTU", palette = "Paired") +
-  theme_classic()
+  theme_classic() + 
+  ggsave("Tables and Figures/Figure 4 duration per larrea treatment.pdf", width = 8, height = 5)
 
-plotlist[[2]] <- ggplot(expt2.2016.insitu, aes(treatment, net.visitation/net.time, fill = insect.RTU)) + 
-  geom_boxplot() + 
-  ylab("") +
-  xlab("") +
-  ggtitle("2016 In-Situ") +
-  scale_fill_brewer(name = "Insect RTU", palette = "Paired") +
-  theme_classic()
 
-ggarrange(plotlist = plotlist, legend = "right", common.legend = TRUE) %>% 
-  annotate_figure(bottom = text_grob("Treatment", face = "bold", size =14), left = text_grob("Net Duration of Visits per Hour", face = "bold", size = 14, rot = 90)) +  ggsave("Tables and Figures/Figure 4 duration per larrea treatment.pdf", width = 8, height = 5)
-``
 
 #temperature####
-ggplot(expt2.insitu, aes(mean.temp, rate.per.flower/net.time, color = insect.RTU)) + 
+ggplot(expt2.insitu, aes(mean.temp, rate.per.flower, color = insect.RTU)) + 
   geom_point() + 
   ylab("Visitation Rate per Flower") + 
   xlab("Mean Temperature (C)") +
@@ -257,10 +354,32 @@ ggplot(expt2.insitu, aes(mean.temp, rate.per.flower/net.time, color = insect.RTU
   facet_wrap(~year) + 
   scale_color_brewer(name = "Insect RTU", palette = "Paired") +
   theme_classic() +
-  ggsave("Tables and Figures/Figure S2 visitation rate per flower of larrea.pdf", width = 7, height = 5)
+  ggsave("Tables and Figures/Figure S3 Larrea visitation rate per termperature.pdf", width = 7, height = 5)
 
-#floral density####
-ggplot(expt2.video, aes(floral.density, count, color = insect.RTU)) + geom_point() + ylab("count") + geom_smooth(method = "lm") + facet_wrap(~year) + scale_color_brewer(palette = "Paired")
+
+
+
+#The effect of microsite on temperature during collection
+ggplot(hobo.temp.graph, aes(net.treatment, temperature, fill = year)) +
+  geom_boxplot() +
+  facet_grid(.~ type) +
+  theme_classic() +
+  ylab("Temperature") +
+  xlab("Microsite") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  ggsave("Tables and Figures/Figure S6 Temperature per microsite.pdf")
+
+
+
+#Temperature over the rainy season
+ggplot(data.weather, aes(rainy.season, mean.temp)) +
+  geom_boxplot() +
+  theme_classic() +
+  ylab("Daily Mean Temperature") +
+  xlab("Season") +
+  
+  scale_x_discrete(labels = c("grow.2015" = "2015", "grow.2016" = "2016")) +
+  ggsave("Tables and Figures/Figure S5 Environment during rainy season.pdf")
 
 ```
 
@@ -269,20 +388,18 @@ ggplot(expt2.video, aes(floral.density, count, color = insect.RTU)) + geom_point
 #Additive-term models for all insect taxa####
 #expt1####
 #2015####
-#video####
 #visitations
-m <- glmmTMB(rate.per.flower~microsite*insect.RTU + mean.temp + offset(net.time) + (1|observation.type) + (1|site.id) + (1|day), family = "poisson", data = expt1.2015)
+m <- glmmTMB(rate.per.flower ~ microsite * insect.RTU + mean.temp + offset(net.time) + (1|site.id) + (1|day), family = "poisson", data = expt1.2015.video)
 
-require(performance)
 check_overdispersion(m) #not overdispersed
 check_zeroinflation(m) #not zero-inflated
 
-require(car)
 Anova(m, test = "Chisq")
-require(emmeans)
+
 emmeans(m, pairwise~insect.RTU, adjust="tukey")
 emmeans(m, pairwise~microsite, adjust="tukey")
-#emmeans(m, pairwise~microsite|insect.RTU, adjust="tukey")
+emtrends(m, pairwise~1, var = "mean.temp") #m = 0.227 SE = 0.0903
+
 
 #visit duration####
 shapiro.test(expt1.2015.video$net.visitation) #not normal
@@ -292,15 +409,6 @@ Anova(m, test = "Chisq")
 
 emmeans(m, pairwise~insect.RTU, adjust="tukey")
 emmeans(m, pairwise~microsite, adjust="tukey")
-
-#in-situ####
-#visitations
-m <- glmmTMB(rate.per.flower~microsite*insect.RTU + mean.temp + (1|site.id) + (1|day), family = "poisson", data = expt1.2015.insitu)
-
-check_overdispersion(m) #not overdispersed
-check_zeroinflation(m) #not zero-inflated
-
-Anova(m, test = "Chisq")
 
 
 #2016####
@@ -312,8 +420,6 @@ check_zeroinflation(m) #not zero-inflated
 
 Anova(m, test = "Chisq")
 emmeans(m, pairwise~insect.RTU, adjust="tukey")
-emmeans(m, pairwise~microsite, adjust="tukey")
-emmeans(m, pairwise ~ microsite|insect.RTU, adjust = "tukey")
 
 
 #visit duration####
@@ -323,111 +429,155 @@ m <- glmmTMB(net.visitation~microsite*insect.RTU + mean.temp + offset(net.time) 
 Anova(m, test = "Chisq")
 
 emmeans(m, pairwise~insect.RTU, adjust="tukey")
+emmeans(m, pairwise~microsite|insect.RTU, adjust="tukey")
+emmeans(m, pairwise~insect.RTU|microsite, adjust="tukey")
+
+#both years without Ambrosia
+m <- glmmTMB(rate.per.flower ~ microsite * insect.RTU * year + mean.temp + offset(net.time) + (1|site.id) + (1|day), family = "poisson", data = subset(expt1.video, microsite != "Ambrosia"))
+
+check_overdispersion(m) #not overdispersed
+check_zeroinflation(m) #not zero-inflated
+
+Anova(m, test = "Chisq")
+
+emmeans(m, pairwise~insect.RTU, adjust="tukey")
 emmeans(m, pairwise~microsite, adjust="tukey")
+emmeans(m, pairwise~year, adjust="tukey")
+emmeans(m, pairwise~year|insect.RTU, adjust="tukey")
+emmeans(m, pairwise~insect.RTU|year, adjust="tukey")
 
 
+#both years without Ambrosia
+m <- glmmTMB(net.visitation ~ microsite * insect.RTU * year + mean.temp + offset(net.time) + (1|site.id) + (1|day), family = "tweedie", data = subset(expt1.video, microsite != "Ambrosia"))
+
+Anova(m, test = "Chisq")
+
+emmeans(m, pairwise~insect.RTU, adjust="tukey")
+emmeans(m, pairwise~microsite, adjust="tukey")
+emmeans(m, pairwise~year, adjust="tukey")
+emmeans(m, pairwise~year|insect.RTU, adjust="tukey")
+emmeans(m, pairwise~insect.RTU|year, adjust="tukey")
 
 #expt2####
 #2015####
-#visitations
-m <- glmmTMB(rate.per.flower~net.treatment*insect.RTU + mean.temp + offset(net.time) + (1|site.id) + (1|day), family = "poisson", data = expt2.2015.video)
+
+
+#visitations####
+m <- glmmTMB(rate.per.flower ~ net.treatment * insect.RTU + year + mean.temp + shrub.volume + (1|site.id) + (1|day), family = "poisson", data = subset(expt2.insitu, insect.RTU != "other"))
 
 check_overdispersion(m) #not overdispersed
 check_zeroinflation(m) #not zero-inflated
 
 Anova(m, test = "Chisq")
 
-#in-situ both years
-m <- glmmTMB(rate.per.flower~net.treatment*insect.RTU * year + mean.temp + (1|site.id) + (1|day), family = "poisson", data = expt2.insitu)
-
-check_overdispersion(m) #not overdispersed
-check_zeroinflation(m) #not zero-inflated
-
-Anova(m, test = "Chisq")
-
-
-#visit duration####
-shapiro.test(expt2.2015.video$net.visitation)
-
-m <- glmmTMB(net.visitation~net.treatment*insect.RTU + mean.temp + offset(net.time) + (1|site.id) + (1|day), family = "tweedie", data = expt2.2015.video)
-
-Anova(m, test = "Chisq")
-emmeans(m, pairwise~insect.RTU, adjust="tukey")
-
-
-#2016####
-#visitations
-m <- glmmTMB(rate.per.flower~net.treatment*insect.RTU + mean.temp + (1|site.id) + (1|day), family = "poisson", data = expt2.2016)
-
-check_overdispersion(m) #not overdispersed
-check_zeroinflation(m) #not zero-inflated
-
-Anova(m, test = "Chisq")
 
 #visit duration####
 shapiro.test(expt2.2016$net.visitation) #not normal
 
-m <- glmmTMB(net.visitation~net.treatment*insect.RTU + mean.temp + offset(net.time) + (1|site.id) + (1|day), family = "tweedie", data = expt2.2016)
+m <- glmmTMB(net.visitation ~ net.treatment * insect.RTU + mean.temp + shrub.volume + offset(net.time) + (1|site.id) + (1|day), family = "tweedie", data = subset(expt2.2016, insect.RTU != "other"))
 Anova(m, test = "Chisq")
+emmeans(m, pairwise ~ net.treatment, adjust = "tukey")
+emmeans(m, pairwise~ insect.RTU, adjust="tukey")
 emmeans(m, pairwise~net.treatment|insect.RTU, adjust="tukey")
 emmeans(m, pairwise~insect.RTU|net.treatment, adjust="tukey")
 
 
-# #temp####
-# #bees only
-# fit <- lm(rate.per.flower~mean.temp, data = subset(expt1.2015, insect.RTU == "bees"))
-# summary(fit) 
-# 
-# fit <- lm(rate.per.flower~mean.temp, data = subset(expt1.2016, insect.RTU == "bees"))
-# summary(fit)
-# 
-# #floral density####
-# #bees only
-# #expt1
-# fit <- lm(count~net.floral.density, data = subset(expt1.2015, insect.RTU == "bees"))
-# summary(fit)
-# a1 <- AIC(fit)
-# 
-# fit <- lm(count~net.floral.density, data = subset(expt1.2016, insect.RTU == "bees"))
-# summary(fit) 
-# a2 <- AIC(fit)
-# 
-# #expt2
-# fit <- lm(count~net.floral.density, data = subset(expt2.2015, insect.RTU == "bees"))
-# summary(fit)
-# a3 <- AIC(fit)
-# 
-# fit <- lm(count~net.floral.density, data = subset(expt2.2016, insect.RTU == "bees"))
-# summary(fit) 
-# a4 <- AIC(fit)
-# 
-# #contrasts between annual and shrub flowers
-# #Quick interactive-term vs additive-term model comparison
-# x <- c(a1,a2)
-# x
-# y <- c(a3, a4)
-# y
-# z <- abs(x-y)
-# z
+#temp####
+#expt1
+insect.RTU <- unique(data$insect.RTU)
+fit.lm.temp <- function(species, date, data){
+  fit <- lm(rate.per.flower ~ mean.temp, data = subset(data, insect.RTU == species & year == date))
+  mod.lm <- tibble(insect.RTU = species, year = date, estimate = summary(fit)[[4]][2], SE = summary(fit)[[4]][4], t = summary(fit)[[4]][6], p = summary(fit)[[4]][8], r2 = summary(fit)[[9]])
+}
+
+lm.temp <- lapply(2015:2016, function(year){
+  lm.date <- lapply(insect.RTU, fit.lm.temp, date = year, data = expt1.video)
+  lm.date <- do.call("rbind", lm.date)
+})
+lm.temp <- do.call("rbind", lm.temp)
+lm.temp
+
+#expt2
+lm.temp.shrub <- lapply(2015:2016, function(year){
+  lm.date <- lapply(insect.RTU[-3], fit.lm.temp, date = year, data = expt2.insitu)
+  lm.date <- do.call("rbind", lm.date)
+})
+lm.temp.shrub <- do.call("rbind", lm.temp.shrub)
+lm.temp.shrub
+
+
+#floral density####
+#expt1
+insect.RTU <- unique(data$insect.RTU)
+fit.lm.floral.density <- function(species, date, variable){
+  fit <- lm(count ~ floral.density, data = subset(expt1.video, insect.RTU == species & year == date))
+  mod.lm <- tibble(insect.RTU = species, year = date, estimate = summary(fit)[[4]][2], SE = summary(fit)[[4]][4], t = summary(fit)[[4]][6], p = summary(fit)[[4]][8], r2 = summary(fit)[[9]])
+}
+
+lm.floral.density <- lapply(2015:2016, function(year){
+  lm.date <- lapply(insect.RTU, fit.lm.floral.density, date = year)
+  lm.date <- do.call("rbind", lm.date)
+})
+lm.floral.density <- do.call("rbind", lm.floral.density)
+lm.floral.density
+
+
+#Effects of microsite on temperature####
+#Differences in temperature during collection
+shapiro.test(temperature.collected$temperature) #normal
+
+m <- glmmTMB(temperature ~ net.treatment * year + (1|site.id) + (1|day) + us(day - 1|site.id), family = "gaussian", data = subset(temperature.collected, net.treatment != "Ambrosia"))
+
+Anova(m, test = "Chisq")
+
+emmeans(m, pairwise ~ net.treatment)
+emmeans(m, pairwise ~ year)
+emmeans(m, pairwise ~ net.treatment|year)
+emmeans(m, pairwise ~ year|net.treatment)
+
+#Differences in temperature during collection in 2016
+shapiro.test(temperature.collected$temperature[temperature.collected$year == 2016]) #normal
+
+m <- glmmTMB(temperature ~ net.treatment + (1|site.id) + us(day - 1|site.id), family = "gaussian", data = subset(temperature.collected, year == 2016))
+
+Anova(m, test = "Chisq")
+
+emmeans(m, pairwise ~ net.treatment)
+
+#Differences in temperature throughout the study
+shapiro.test(hobo.temp.day$temperature) #normal
+
+m <- glmmTMB(temperature ~ net.treatment * year + (1|site.id) + (1|day) + us(day - 1|site.id), family = "gaussian", data = subset(hobo.temp.day, net.treatment != "Ambrosia"))
+
+Anova(m, test = "Chisq")
+
+emmeans(m, pairwise ~ net.treatment)
+emmeans(m, pairwise ~ year)
+emmeans(m, pairwise ~ net.treatment|year)
+emmeans(m, pairwise ~ year|net.treatment)
+
+#Differences in temperature throughout the study in 2016
+shapiro.test(hobo.temp.day$temperature[hobo.temp.day$year == 2016]) #normal
+
+m <- glmmTMB(temperature ~ net.treatment + (1|site.id) + us(day - 1|site.id), family = "gaussian", data = subset(hobo.temp.day, year == 2016))
+
+Anova(m, test = "Chisq")
+
+emmeans(m, pairwise ~ net.treatment)
+
+#Difference in environmental variables between years
+t.test(mean.temp ~ rainy.season, data = data.weather)
+t.test(precipitation ~ rainy.season, data = data.weather)
+t.test(radiation ~ rainy.season, data = data.weather)
 
 ```
 
 ###Interpretation  
-1. There is support for the single-magnet hypothesis through bees.
-2. Both shrub Insect RTU can generally facilitate annuals through pollination through bees.
-3. Taxa specificity in plant-pollinator associations is critical for both foundation and annual plant Insect RTU 
-4. Larrea flowers are less attractive to bees relative to annuals within this ecosystem.  
-5. Bees repond to temp by increasing visitation rates to annuals.
-6. Bees respond to positively to increasing floral density of both annual and Larrea flowers.
-7. There is evidence that shrubs receive no reciprocal benefit or facilitation from annuals, and furthermore, that there is a cost to facilitation by these foundation shrubs.
-8. Bees are the most effective pollinators, i.e. they also spend the most time with annual flowers and likely are the most effective service pollinators.
-
-
 1. There is support for the magnet hypothesis.
 2. Larrea tridentata can facilitate annuals through pollination, but Ambrosia can depress pollinators.
 3. Taxa specificity in plant-pollinator associations is critical for both foundation and annual plant Insect RTU 
 4. Larrea flowers are less attractive to bees relative to annuals within this ecosystem. 
 5. Bees respond to temp by increasing visitation rates to annuals.
 6. Bees respond to positively to increasing floral density of both annual and Larrea flowers.
-7. There is evidence that Larrea tridentata receives recipricol benefit or facilitation from animals by increased duration of bee visits.
+7. There is evidence that Larrea tridentata receives recipricol cost from animals by decreased duration of bee visits.
 8. Bees are the most effective pollinators, i.e. they also spend the most time with annual flowers and likely are the most effective service pollinators.
