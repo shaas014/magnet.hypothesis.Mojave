@@ -47,6 +47,17 @@ meta <- read_csv("data/meta-data.csv")
 datatable(meta)
 #error is SD
 
+#shrub dimensions####
+shrubs <- read_csv("data/shrubs.csv")
+
+shrubs <- shrubs %>% 
+  mutate(
+    date = dmy(date),
+    year = year(date),
+    day = day(date)
+  )
+
+
 #data####
 data.2015 <- read_csv("data/MNP.2015.csv")
 data.2016 <- read_csv("data/MNP.2016.csv")
@@ -58,8 +69,14 @@ data <- rbind.data.frame(data.2015, data.2016)
 data <- data %>% rename(net.treatment = treatment) #%>% na.omit(data) 
 
 #keep key columns and minimize working dataframe
-data <- data %>% select(-name, -plant, -start, -stop, -ID, -recorder) 
+data <- data %>% select(-name, -plant, -start, -stop, -ID, -recorder, -shrub.x, -shrub.y, -shrub.z) %>% 
+  mutate(date = mdy(date),
+  day = day(date))
 
+
+#join data with shrub data
+data <- data %>% 
+  left_join(shrubs, by = c("year", "day", "date", "rep", "net.treatment"))
 
 #set year and rep as characters
 data$year <- as.character(data$year)
@@ -70,6 +87,7 @@ data$rep <- as.character(data$rep)
 data$total.duration <- (as.numeric(data$total.duration))/3600
 data$visitation.duration <- (as.numeric(data$visitation.duration))/3600
 
+
 #recode net.treatment column and separate observation types
 data <- data %>% mutate(
   net.treatment = ifelse(net.treatment %in% c("SA"), "Larrea flowers with annuals",
@@ -78,9 +96,21 @@ data <- data %>% mutate(
                                        ifelse(net.treatment %in% c("OA"), "Annual flowers in open",
                                               ifelse(net.treatment %in% c("AMB"), "Annual flowers under Ambrosia","NA"))))),
   observation.type = ifelse(floral.density == 200, "in-situ", "video"),
-  shrub.volume = 4/3 * pi * shrub.x * shrub.y * shrub.z,
-  date = mdy(date),
-  day = day(date)) 
+  shrub.volume = 4/3 * pi * shrub.x * shrub.y * shrub.z) 
+
+
+heights <- data %>% 
+  group_by(year, day, net.treatment, rep) %>% 
+  summarise(height = mean(shrub.z),
+            width = mean(shrub.x),
+            length = mean(shrub.y)) %>% 
+  mutate(species = ifelse(net.treatment %in% c("Larrea flowers without annuals", "Annual flowers under Larrea"), "Larrea",
+                   ifelse(net.treatment %in% c("Annual flowers under Ambrosia"), "Ambrosia", "NA"))) %>% 
+  filter(height > 0, net.treatment != "Larrea flowers with annuals") %>% 
+  group_by(species) %>% 
+  summarise(mean.height = mean(height),
+            n = length(height))
+  
 
 #frequency wrangled by RTU####
 #total.duration has two values for each replicate only if film was divided into two files, I've summed them here.
@@ -153,6 +183,19 @@ expt2.insitu = expt2 %>% filter(observation.type == "in-situ" ) %>%
   
 expt2.2015.insitu <- expt2.insitu %>% filter(year == 2015)
 expt2.2016 <- expt2 %>% filter(year == 2016 & insect.RTU != "other") #no video for 2016
+
+#Summary Stats
+expt1.video %>% 
+  group_by(year, insect.RTU) %>% 
+  summarise(sum = sum(count),
+            video = sum(unique(net.time)))
+
+
+
+expt2.insitu %>% 
+  group_by(year, insect.RTU) %>% 
+  summarise(sum = sum(count))
+
 
 #Data structure: A total of 4 dataframes, two experiments, two years each
 
@@ -282,7 +325,7 @@ data.weather %>% group_by(rainy.season) %>%
 #visitations####
 ggplot(expt1.video, aes(microsite, rate.per.flower, fill = insect.RTU)) + 
   geom_boxplot() + 
-  ylab("Visitation Rate per Flower") + 
+  ylab("Visitation rate per flower") + 
   xlab("Microsite") + 
   scale_fill_brewer(name = "Insect RTU", palette = "Paired") + 
   facet_grid(~year) + 
@@ -293,7 +336,7 @@ ggplot(expt1.video, aes(microsite, rate.per.flower, fill = insect.RTU)) +
 #net visitation time
 ggplot(expt1.video , aes(microsite, net.visitation, fill = insect.RTU)) + 
   geom_boxplot() + 
-  ylab("Net Duration of Visits per Hour") + 
+  ylab("Net duration of visits per hour") + 
   xlab("Microsite") +
   scale_fill_brewer(name = "Insect RTU", palette = "Paired") + 
   facet_grid(~year) +
@@ -304,12 +347,13 @@ ggplot(expt1.video , aes(microsite, net.visitation, fill = insect.RTU)) +
 #temperature####
 ggplot(expt1.video, aes(mean.temp, rate.per.flower, color = insect.RTU)) + 
   geom_point() + 
-  ylab("Visitation Rate per Flower") + 
+  ylab("Visitation rate per flower") + 
   xlab("Mean Temperature (C)") +
   geom_smooth(method = "lm") + 
   facet_wrap(~year) + 
   scale_color_brewer(name = "Insect RTU", palette = "Paired") +
   theme_classic() +
+  theme(text = element_text(size = 13)) +
   ggsave("Tables and Figures/Figure S2 Malacothrix visitation rate per temperature.pdf", width = 7, height = 5)
 
 
@@ -322,13 +366,14 @@ ggplot(expt1.video, aes(floral.density, count, color = insect.RTU)) +
   facet_wrap(~year) + 
   scale_color_brewer(name = "Insect RTU", palette = "Paired") +
   theme_classic() +
+  theme(text = element_text(size = 13)) +
   ggsave("Tables and Figures/Figure S4 Floral Density.pdf", width = 7, height = 4)
 
 #expt2####
 #visitations####
 ggplot(expt2.insitu, aes(treatment, rate.per.flower, fill = insect.RTU)) + 
   geom_boxplot() + 
-  ylab("Visitation Rate per Flower") + 
+  ylab("Visitation rate per flower") + 
   xlab("Treatment") +
   scale_fill_brewer(name = "Insect RTU", palette = "Paired") + 
   facet_grid(~year) +
@@ -339,7 +384,7 @@ ggplot(expt2.insitu, aes(treatment, rate.per.flower, fill = insect.RTU)) +
 #visit durations####
 ggplot(expt2.2016, aes(treatment, net.visitation * 3600, fill = insect.RTU)) + 
   geom_boxplot() + 
-  ylab("Net Duration of Visits (s)") +
+  ylab("Net duration of visits (s)") +
   xlab("Treatment") +
   scale_fill_brewer(name = "Insect RTU", palette = "Paired") +
   theme_classic() + 
@@ -350,12 +395,13 @@ ggplot(expt2.2016, aes(treatment, net.visitation * 3600, fill = insect.RTU)) +
 #temperature####
 ggplot(expt2.insitu, aes(mean.temp, rate.per.flower, color = insect.RTU)) + 
   geom_point() + 
-  ylab("Visitation Rate per Flower") + 
+  ylab("Visitation rate per flower") + 
   xlab("Mean Temperature (C)") +
   geom_smooth(method = "lm") + 
   facet_wrap(~year) + 
   scale_color_brewer(name = "Insect RTU", palette = "Paired") +
   theme_classic() +
+  theme(text = element_text(size = 13)) +
   ggsave("Tables and Figures/Figure S3 Larrea visitation rate per termperature.pdf", width = 7, height = 5)
 
 
@@ -368,7 +414,8 @@ ggplot(hobo.temp.graph, aes(net.treatment, temperature, fill = year)) +
   theme_classic() +
   ylab("Temperature") +
   xlab("Microsite") +
-  theme(axis.text.x = element_text(angle = 90)) +
+  theme(axis.text.x = element_text(angle = 90),
+        text = element_text(size = 13)) +
   ggsave("Tables and Figures/Figure S6 Temperature per microsite.pdf")
 
 
@@ -377,9 +424,9 @@ ggplot(hobo.temp.graph, aes(net.treatment, temperature, fill = year)) +
 ggplot(data.weather, aes(rainy.season, mean.temp)) +
   geom_boxplot() +
   theme_classic() +
-  ylab("Daily Mean Temperature") +
+  ylab("Daily mean temperature") +
   xlab("Season") +
-  
+  theme(text = element_text(size = 13)) +
   scale_x_discrete(labels = c("grow.2015" = "2015", "grow.2016" = "2016")) +
   ggsave("Tables and Figures/Figure S5 Environment during rainy season.pdf")
 
@@ -490,10 +537,10 @@ emmeans(m, pairwise~insect.RTU|net.treatment, adjust="tukey")
 
 #temp####
 #expt1
-insect.RTU <- unique(data$insect.RTU)
+insect.RTU <- unique(expt1$insect.RTU)
 fit.lm.temp <- function(species, date, data){
   fit <- lm(rate.per.flower ~ mean.temp, data = subset(data, insect.RTU == species & year == date))
-  mod.lm <- tibble(insect.RTU = species, year = date, estimate = summary(fit)[[4]][2], SE = summary(fit)[[4]][4], t = summary(fit)[[4]][6], p = summary(fit)[[4]][8], r2 = summary(fit)[[9]])
+  mod.lm <- tibble(insect.RTU = species, year = date, estimate = summary(fit)[[4]][2], SE = summary(fit)[[4]][4], t = summary(fit)[[4]][6], p = summary(fit)[[4]][8], r2 = summary(fit)[[9]], df = summary(fit)[[7]][2])
 }
 
 lm.temp <- lapply(2015:2016, function(year){
@@ -514,10 +561,10 @@ lm.temp.shrub
 
 #floral density####
 #expt1
-insect.RTU <- unique(data$insect.RTU)
+insect.RTU <- unique(expt1$insect.RTU)
 fit.lm.floral.density <- function(species, date, variable){
   fit <- lm(count ~ floral.density, data = subset(expt1.video, insect.RTU == species & year == date))
-  mod.lm <- tibble(insect.RTU = species, year = date, estimate = summary(fit)[[4]][2], SE = summary(fit)[[4]][4], t = summary(fit)[[4]][6], p = summary(fit)[[4]][8], r2 = summary(fit)[[9]])
+  mod.lm <- tibble(insect.RTU = species, year = date, estimate = summary(fit)[[4]][2], SE = summary(fit)[[4]][4], t = summary(fit)[[4]][6], p = summary(fit)[[4]][8], r2 = summary(fit)[[9]], df = summary(fit)[[7]][2])
 }
 
 lm.floral.density <- lapply(2015:2016, function(year){
